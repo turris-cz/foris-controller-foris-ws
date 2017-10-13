@@ -1,0 +1,63 @@
+#!/usr/bin/env python
+
+#
+# foris-ws
+# Copyright (C) 2017 CZ.NIC, z.s.p.o. (http://www.nic.cz/)
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software Foundation,
+# Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301  USA
+#
+
+import argparse
+import logging
+import os
+
+logger = logging.getLogger("foris_ws")
+
+
+if __name__ == "__main__":
+
+    # Parse the command line options
+    parser = argparse.ArgumentParser(prog="foris-ws")
+    parser.add_argument("-d", "--debug", dest="debug", action="store_true", default=False)
+
+    subparsers = parser.add_subparsers(help="buses", dest="bus")
+    ubus_parser = subparsers.add_parser("ubus", help="use ubus to obtain notificatins")
+    ubus_parser.add_argument("--path", dest="path", default='/var/run/ubus.sock')
+    unix_parser = subparsers.add_parser(
+        "unix-socket", help="use unix socket to obtain notifications")
+    unix_parser.add_argument("--path", dest="path", default='/tmp/foris-controller.soc')
+
+    options = parser.parse_args()
+
+    if options.debug:
+        logging.basicConfig(level=logging.DEBUG)
+    else:
+        logging.basicConfig()
+
+    if options.bus == "ubus":
+        from foris_client.buses.ubus import UbusListener
+        listener_class = UbusListener
+        logger.debug("Using ubus to listen for notifications.")
+        #UbusListener(options.path, handler)
+
+    elif options.bus == "unix-socket":
+        from foris_client.buses.unix_socket import UnixSocketListener
+        logger.debug("Using unix-socket to listen for notifications.")
+        try:
+            os.unlink(options.path)
+        except OSError:
+            pass
+        listener_class = UnixSocketListener
+        #UnixSocketListener(options.path, handler)
