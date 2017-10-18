@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-
 #
 # foris-ws
 # Copyright (C) 2017 CZ.NIC, z.s.p.o. (http://www.nic.cz/)
@@ -19,35 +17,11 @@
 # Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301  USA
 #
 
-from setuptools import setup
-from foris_ws import version
+import logging
 
-DESCRIPTION = """
-Implementation of websocket server for foris notification system.
-"""
+logger = logging.getLogger(__name__)
 
-setup(
-    name='foris-ws',
-    version=version,
-    author='CZ.NIC, z.s.p.o. (http://www.nic.cz/)',
-    author_email='stepan.henek@nic.cz',
-    packages=[
-        'foris_ws',
-        'foris_ws/authentication',
-    ],
-    scripts=['bin/foris-ws'],
-    url='https://gitlab.labs.nic.cz/turris/foris-ws',
-    license='COPYING',
-    description=DESCRIPTION,
-    long_description=open('README.rst').read(),
-    requires=[
-        'foris_client',
-        'websocket_server',
-    ],
-    setup_requires=[
-        'pytest-runner',
-    ],
-    tests_require=[
-        'pytest',
-    ],
-)
+
+def authenticate(message):
+    logger.debug("Logging without any authentication.")
+    return True

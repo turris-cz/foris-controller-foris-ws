@@ -23,6 +23,10 @@ import argparse
 import logging
 import os
 
+import threading
+
+from foris_ws.websocket_listener import make_ws_listener
+
 logger = logging.getLogger("foris_ws")
 
 
@@ -31,13 +35,27 @@ if __name__ == "__main__":
     # Parse the command line options
     parser = argparse.ArgumentParser(prog="foris-ws")
     parser.add_argument("-d", "--debug", dest="debug", action="store_true", default=False)
+    parser.add_argument(
+        "-a", "--authentication", type=str, choices=["ubus", "none"],
+        help="Which authentication method should be used", required=True
+    )
+    parser.add_argument(
+        "--ipv6", type=bool, help="Should the ws server listen on ipv6 instead of ipv4",
+        default=False
+    )
+    parser.add_argument(
+        "--host", type=str, help="Hostname of the websocket server.", required=True
+    )
+    parser.add_argument(
+        "--port", type=int, help="Port of the websocket server.", required=True
+    )
 
     subparsers = parser.add_subparsers(help="buses", dest="bus")
     ubus_parser = subparsers.add_parser("ubus", help="use ubus to obtain notificatins")
     ubus_parser.add_argument("--path", dest="path", default='/var/run/ubus.sock')
     unix_parser = subparsers.add_parser(
         "unix-socket", help="use unix socket to obtain notifications")
-    unix_parser.add_argument("--path", dest="path", default='/tmp/foris-controller.soc')
+    unix_parser.add_argument("--path", dest="path", default='/tmp/foris-controller-notify.soc')
 
     options = parser.parse_args()
 
@@ -61,3 +79,26 @@ if __name__ == "__main__":
             pass
         listener_class = UnixSocketListener
         #UnixSocketListener(options.path, handler)
+
+    if options.authentication == "ubus":
+        from foris_ws.authentication.ubus import authenticate
+    elif options.authentication == "none":
+        from foris_ws.authentication.none import authenticate
+
+    # prepare workers
+    ws_listener = make_ws_listener(options.host, options.port, authenticate, options.ipv6)
+
+    # websocket server worker
+    ws_listener_thread = threading.Thread(target=ws_listener.run_forever)
+    ws_listener_thread.daemon = True
+    ws_listener_thread.start()
+
+    try:
+        while True:
+            ws_listener_thread.join(0.5)
+            if not ws_listener_thread.is_alive():
+                logger.error("websocket server is not running. Exiting...")
+                break
+    except:
+        ws_listener.shutdown()
+        ws_listener.server_close()
