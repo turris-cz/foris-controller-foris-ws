@@ -71,8 +71,7 @@ def message_received(client, server, message):
 
 
 def make_ws_listener(listen_host, listen_port, authenticate_method, ipv6=False):
-    logger.debug(
-        "Starting to listen on '%s:%d' for websocket connections." % (listen_host, listen_port))
+    logger.debug("Initializing websocket server on '%s:%d'." % (listen_host, listen_port))
     server = WebsocketServer(listen_port, host=listen_host)
     server.set_fn_new_client(client_connected)
     server.set_fn_client_left(client_left)

@@ -22,10 +22,12 @@
 import argparse
 import logging
 import os
+import time
 
 import threading
 
 from foris_ws.websocket_listener import make_ws_listener
+from foris_ws.bus_listener import make_bus_listener
 
 logger = logging.getLogger("foris_ws")
 
@@ -68,7 +70,6 @@ if __name__ == "__main__":
         from foris_client.buses.ubus import UbusListener
         listener_class = UbusListener
         logger.debug("Using ubus to listen for notifications.")
-        #UbusListener(options.path, handler)
 
     elif options.bus == "unix-socket":
         from foris_client.buses.unix_socket import UnixSocketListener
@@ -78,7 +79,6 @@ if __name__ == "__main__":
         except OSError:
             pass
         listener_class = UnixSocketListener
-        #UnixSocketListener(options.path, handler)
 
     if options.authentication == "ubus":
         from foris_ws.authentication.ubus import authenticate
@@ -87,18 +87,38 @@ if __name__ == "__main__":
 
     # prepare workers
     ws_listener = make_ws_listener(options.host, options.port, authenticate, options.ipv6)
+    bus_listener = make_bus_listener(listener_class, options.path)
 
     # websocket server worker
+    logger.debug("Starting to listen to websocket server.")
     ws_listener_thread = threading.Thread(target=ws_listener.run_forever)
     ws_listener_thread.daemon = True
     ws_listener_thread.start()
 
+    logger.debug("Starting to listen to foris bus.")
+    bus_listener_thread = threading.Thread(target=bus_listener.listen)
+    bus_listener_thread.daemon = True
+    bus_listener_thread.start()
+
     try:
         while True:
-            ws_listener_thread.join(0.5)
+            ws_listener_thread.join(0.2)
             if not ws_listener_thread.is_alive():
                 logger.error("websocket server is not running. Exiting...")
                 break
+            bus_listener_thread.join(0.2)
+            if not bus_listener_thread.is_alive():
+                logger.error("bus listener is not running. Exiting...")
+                break
     except:
-        ws_listener.shutdown()
-        ws_listener.server_close()
+        bus_listener.disconnect()
+        try:
+            ws_listener.shutdown()
+        except:
+            pass
+        try:
+            ws_listener.server_close()
+        except:
+            pass
+        ws_listener_thread.join(1.0)
+        bus_listener_thread.join(1.0)

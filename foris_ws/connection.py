@@ -187,7 +187,7 @@ class Connections(object):
     @_with_lock
     def publish_notification(self, module, message):
         for cliet_id, connection in self._connections.items():
-            if module in connection.modules():
+            if module in connection.modules:
                 connection.send_message_to_client({
                     'module': module,
                     'message': message,
