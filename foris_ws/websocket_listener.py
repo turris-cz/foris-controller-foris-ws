@@ -50,8 +50,10 @@ def client_left(client, server):
     :param server: server instance
     :type server: websocket_server.WebsocketServer
     """
-    connections.remove_connection(client["id"])
-    logger.debug("Client '%d' was disconnected.", client["id"])
+    # sometimes the library returns None as a client
+    if client:
+        connections.remove_connection(client["id"])
+        logger.debug("Client '%d' was disconnected.", client["id"])
 
 
 def message_received(client, server, message):
