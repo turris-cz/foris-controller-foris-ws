@@ -1,4 +1,4 @@
-foris-client
-foris-controller
 pytest
 pytest-runner
+websocket-client
+-e git+https://github.com/shenek/python-websocket-server.git@logging_update#egg=websocket-server
