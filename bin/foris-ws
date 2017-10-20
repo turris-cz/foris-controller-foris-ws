@@ -31,6 +31,50 @@ from foris_ws.bus_listener import make_bus_listener
 logger = logging.getLogger("foris_ws")
 
 
+def manage_listeners(ws_listener, bus_listener):
+    """ Starts and waits for listener threads
+        and tries to perform a proper termination if necessary.
+
+    :param ws_listener: websocket server instance
+    :type ws_listener: websocket_server.WebsocketServer
+    :param bus_listener: foris socket listener instace
+    :type bus_listener: foris_client.buses.base.BaseListener
+    """
+
+    logger.debug("Starting to listen to websocket server.")
+    ws_listener_thread = threading.Thread(target=ws_listener.run_forever)
+    ws_listener_thread.daemon = True
+    ws_listener_thread.start()
+
+    logger.debug("Starting to listen to foris bus.")
+    bus_listener_thread = threading.Thread(target=bus_listener.listen)
+    bus_listener_thread.daemon = True
+    bus_listener_thread.start()
+
+    try:
+        while True:
+            ws_listener_thread.join(0.2)
+            if not ws_listener_thread.is_alive():
+                logger.error("websocket server is not running. Exiting...")
+                break
+            bus_listener_thread.join(0.2)
+            if not bus_listener_thread.is_alive():
+                logger.error("bus listener is not running. Exiting...")
+                break
+    except:
+        bus_listener.disconnect()
+        try:
+            ws_listener.shutdown()
+        except:
+            pass
+        try:
+            ws_listener.server_close()
+        except:
+            pass
+        ws_listener_thread.join(1.0)
+        bus_listener_thread.join(1.0)
+
+
 if __name__ == "__main__":
 
     # Parse the command line options
@@ -88,36 +132,4 @@ if __name__ == "__main__":
     ws_listener = make_ws_listener(options.host, options.port, authenticate, options.ipv6)
     bus_listener = make_bus_listener(listener_class, options.path)
 
-    # websocket server worker
-    logger.debug("Starting to listen to websocket server.")
-    ws_listener_thread = threading.Thread(target=ws_listener.run_forever)
-    ws_listener_thread.daemon = True
-    ws_listener_thread.start()
-
-    logger.debug("Starting to listen to foris bus.")
-    bus_listener_thread = threading.Thread(target=bus_listener.listen)
-    bus_listener_thread.daemon = True
-    bus_listener_thread.start()
-
-    try:
-        while True:
-            ws_listener_thread.join(0.2)
-            if not ws_listener_thread.is_alive():
-                logger.error("websocket server is not running. Exiting...")
-                break
-            bus_listener_thread.join(0.2)
-            if not bus_listener_thread.is_alive():
-                logger.error("bus listener is not running. Exiting...")
-                break
-    except:
-        bus_listener.disconnect()
-        try:
-            ws_listener.shutdown()
-        except:
-            pass
-        try:
-            ws_listener.server_close()
-        except:
-            pass
-        ws_listener_thread.join(1.0)
-        bus_listener_thread.join(1.0)
+    manage_listeners(ws_listener, bus_listener)

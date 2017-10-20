@@ -23,5 +23,10 @@ logger = logging.getLogger(__name__)
 
 
 def authenticate(message):
+    """ Authentication method which bypasses any authentication procedure and simple returns True
+
+    :returns: True
+    :rtype: bool
+    """
     logger.debug("Logging without any authentication.")
     return True

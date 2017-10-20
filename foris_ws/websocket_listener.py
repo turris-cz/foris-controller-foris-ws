@@ -41,12 +41,12 @@ def client_connected(client, server):
 
 
 def client_left(client, server):
-    """ Handle when a new client was connected
-    properly dispose client instance and try to terminate all its threads
+    """ Handle when a client disconnects
+    properly disposes client instance and try to terminate all its threads
     this function is used in another thread
 
     :param client: dict which contains "id", "handler" and "address(ip,port)"
-    :type client: dict
+    :type client: None or dict
     :param server: server instance
     :type server: websocket_server.WebsocketServer
     """
@@ -73,6 +73,18 @@ def message_received(client, server, message):
 
 
 def make_ws_listener(listen_host, listen_port, authenticate_method, ipv6=False):
+    """ Prepares a new websocket listener instance
+    :param listen_host: host or ip address
+    :type listen_host: str
+    :param listen_port: port where to listen
+    :type listen_port: int
+    :param authenticate_method: authentication method which will be used
+    :type authenticate_method: callable
+    :param ipv6: should listen only on ipv6 (default=ipv4 only)
+    :param ipv6: bool
+    :returns: server instance
+    :rtype: websocket_server.WebsocketServer
+    """
 
     repr_host = listen_host
     if ipv6:
@@ -80,7 +92,7 @@ def make_ws_listener(listen_host, listen_port, authenticate_method, ipv6=False):
         class server_class(WebsocketServer):
             address_family = socket.AF_INET6
 
-        if listen_host.count(":") > 1:  # ipv6 test
+        if listen_host.count(":") > 1:  # ipv6 address test
             repr_host = "[%s]" % listen_host
 
     else:

@@ -32,7 +32,7 @@ logger = logging.getLogger(__name__)
 try:
     basestring
 except NameError:
-    basestring = str  # python 3
+    basestring = str  # python 3 consolidation
 
 
 class IncorrectMessage(Exception):
@@ -57,6 +57,12 @@ def _with_lock(func):
 
 
 def ping_worker(connection, timeout):
+    """ Periodically sends a ping via connection
+    :param connection: connection instance
+    :type connection: Connection
+    :param timeout: timeout which will be used between the pings
+    :type timeout: float
+    """
     while True:
         time.sleep(timeout)
         if connection.exiting:
@@ -66,9 +72,19 @@ def ping_worker(connection, timeout):
 
 
 class Connection(object):
+    """ Class which represents the connection between the client and the websocket server
+    """
     PING_THREAD_TIMEOUT = 60.0
 
     def __init__(self, client_id, handler, server):
+        """ Initializes the connection and starts the ping thread
+
+        :param client_id: unique client id
+        :type client_id: int
+        :param handler: handler which is used to communicate with the client
+        :param server: server instance
+        :type server: websocket_server.WebsocketServer
+        """
         self.client_id = client_id
         self.handler = handler
         self.server = server
@@ -84,6 +100,13 @@ class Connection(object):
 
     @staticmethod
     def _prepare_modules(modules):
+        """ Prepares and checks whether the modules are valid.
+        :param modules: list of available modules
+        :type modules: list(str)
+        :returns: processed modules
+        :rtype: list(str)
+        :raises IncorrectMessage: on incorrect modules format
+        """
         if isinstance(modules, basestring):
             return [modules]
         if not isinstance(modules, Iterable):
@@ -97,6 +120,15 @@ class Connection(object):
         return modules
 
     def _subscribe(self, modules):
+        """ Subscribes modules to the client and prepares appropriate response
+
+        :param modules: moduels to subscribe
+        :type modules: list(str)
+        :returns: response to client
+        :rtype: dict
+        :raises IncorrectMessage: on incorrect modules format
+        """
+
         modules = Connection._prepare_modules(modules)
         logger.debug("Subscribing client '%d' for modules %s." % (self.client_id, modules))
         self.modules = self.modules.union(set(modules))
@@ -104,6 +136,15 @@ class Connection(object):
         return {"result": True, "subscriptions": list(self.modules)}
 
     def _unsubscribe(self, modules):
+        """ Unsubscribes modules to the client and prepares appropriate response
+
+        :param modules: moduels to subscribe
+        :type modules: list(str)
+        :returns: response to client
+        :rtype: dict
+        :raises IncorrectMessage: on incorrect modules format
+        """
+
         modules = Connection._prepare_modules(modules)
         logger.debug("Unsubscribing client '%d' from modules %s." % (self.client_id, modules))
         self.modules = self.modules.difference(set(modules))
@@ -112,16 +153,26 @@ class Connection(object):
 
     @_with_lock
     def send_ping(self):
+        """ Sends a websocket's protocol ping to the client
+        """
         logger.info("Sending ping to client '%d'.", self.client_id)
         self.handler.send_text("ping!", websocket_server.OPCODE_PING)
 
     @_with_lock
     def send_message_to_client(self, msg):
+        """ Sends a message to the connected client
+        :param msg: message to be sent to the client (in json format)
+        :type msg: dict
+        """
         str_msg = json.dumps(msg)
         logger.debug("Sending message to client %d: %s", self.client_id, str_msg)
         self.handler.send_message(str_msg)
 
     def process_message(self, message):
+        """ Processes a message which is recieved from the client
+        :param message: message which will be processed
+        :type message: str
+        """
         try:
             try:
                 message = json.loads(message)
@@ -150,21 +201,41 @@ class Connection(object):
             self.send_message_to_client({"result": False, "error": str(e)})
 
     def close(self):
+        """ Sets a flag which should eventually close the connection.
+        """
         # notify ping thread to exit
         self.exiting = True
 
 
 class Connections(object):
+    """ Class which represents all active connections
+    """
+
     def __init__(self):
+        """ Initializes Connections
+        """
         self.lock = threading.Lock()
         self._connections = {}
 
     @_with_lock
     def append_connection(self, client_id, handler, server):
+        """ creates and adds a Connection instance among active connections
+
+        :param client_id: unique client id
+        :type client_id: int
+        :param handler: handler which is used to communicate with the client
+        :param server: server instance
+        :type server: websocket_server.WebsocketServer
+        """
         self._connections[client_id] = Connection(client_id, handler, server)
 
     @_with_lock
     def remove_connection(self, client_id):
+        """ removes a Connection instance from active connections
+
+        :param client_id: unique client id
+        :type client_id: int
+        """
         if client_id not in self._connections:
             return
         try:
@@ -175,6 +246,13 @@ class Connections(object):
 
     @_with_lock
     def handle_message(self, client_id, message):
+        """ Handles a message recieved from the client
+
+        :param client_id: unique client id
+        :type client_id: int
+        :param message: message to be handeled
+        :type message: str
+        """
         if client_id not in self._connections:
             logging.warning("Client '%d' is present it the connection list" % client_id)
             return
@@ -186,7 +264,15 @@ class Connections(object):
 
     @_with_lock
     def publish_notification(self, module, message):
-        for cliet_id, connection in self._connections.items():
+        """ Publishes notification of the module to clients which have the module subscribed
+            does nothing if no module is present in the message
+
+        :param module: name of the module related to the notification
+        :type module: str
+        :param message: a notification which will be published to all relevant clients
+        :type message: dict
+        """
+        for _, connection in self._connections.items():
             if module in connection.modules:
                 connection.send_message_to_client(message)
 

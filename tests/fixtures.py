@@ -61,6 +61,7 @@ def _wait_for_opened_socket(host, ipv6):
         except Exception as e:
             time.sleep(0.2)
 
+
 @pytest.fixture(params=["ipv6", "ipv4"], scope="module")
 def address_family(request):
     if request.param == "ipv6":

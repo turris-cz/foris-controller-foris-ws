@@ -25,18 +25,37 @@ from .connection import connections
 logger = logging.getLogger(__name__)
 
 
-def send_notification_worker(data):
-    connections.publish_notification(data["module"], data)
+def send_notification_worker(notification):
+    """ Sends a notification via all active connections.
+
+    :param notification: notification to be sent
+    :param notification: dict
+    """
+    connections.publish_notification(notification["module"], notification)
 
 
-def handler(data):
-    logger.debug("Notification recieved: %s" % data)
-    thread = threading.Thread(target=send_notification_worker, args=(data, ))
+def handler(notification):
+    """ Recieves a notifiation and starts a thread which is responsible for publishing it
+
+    :param notification: notification to be processsed
+    :param notification: dict
+    """
+    logger.debug("Notification recieved: %s" % notification)
+    thread = threading.Thread(target=send_notification_worker, args=(notification, ))
     thread.daemon = True
     thread.start()
 
 
 def make_bus_listener(listener_class, socket_path):
+    """ Prepares a new foris notification listener
+
+    :param listener_class: listener class to be used (UbusListener, UnixSocketListner, ...)
+    :type listener_class: type
+    :param socket_path: path to socket
+    :type socket_path: str
+    :returns: instantiated listener
+    :rtype: foris_client.buses.base.BaseListener
+    """
     logger.debug("Initializing bus listener (%s)" % (socket_path))
     listener = listener_class(socket_path, handler)
     return listener
