@@ -30,7 +30,8 @@ import threading
 UBUS_PATH = "/tmp/ubus-foris-ws-test.soc"
 SOCK_PATH = "/tmp/foris-ws-test.soc"
 NOTIFICATIONS_SOCK_PATH = "/tmp/foris-ws-notifications-test.soc"
-WS_HOST = "localhost"
+WS_HOST4 = "127.0.0.1"
+WS_HOST6 = "::1"
 WS_PORT = 8888
 WS_OUTPUT = "/tmp/foris-ws-test-output.json"
 
@@ -50,19 +51,27 @@ def read_wc_client_output(old_data=None):
     return last_data
 
 
-def _wait_for_opened_socket():
-    s = socket.socket()
+def _wait_for_opened_socket(host, ipv6):
+    s = socket.socket(socket.AF_INET6 if ipv6 else socket.AF_INET)
     while True:
         try:
-            s.connect((WS_HOST, WS_PORT))
+            s.connect((host, WS_PORT))
             s.close()
             break
-        except:
+        except Exception as e:
             time.sleep(0.2)
+
+@pytest.fixture(params=["ipv6", "ipv4"], scope="module")
+def address_family(request):
+    if request.param == "ipv6":
+        return WS_HOST6, True
+    elif request.param == "ipv4":
+        return WS_HOST4, False
 
 
 @pytest.fixture(scope="module")
-def ubus_ws(request, ubusd_test):
+def ubus_ws(request, ubusd_test, address_family):
+    host, ipv6 = address_family
     while not os.path.exists(UBUS_PATH):
         time.sleep(0.3)
 
@@ -71,18 +80,22 @@ def ubus_ws(request, ubusd_test):
         devnull = open(os.devnull, 'wb')
         kwargs['stderr'] = devnull
         kwargs['stdout'] = devnull
-    process = subprocess.Popen([
-        "bin/foris-ws", "-d", "-a", "none", "--host", WS_HOST, "--port", str(WS_PORT),
+    args = [
+        "bin/foris-ws", "-d", "-a", "none", "--host", host, "--port", str(WS_PORT),
         "ubus", "--path", UBUS_PATH
-    ], **kwargs)
-    _wait_for_opened_socket()
+    ]
+    if ipv6:
+        args.insert(1, "--ipv6")
+    process = subprocess.Popen(args, **kwargs)
+    _wait_for_opened_socket(host, ipv6)
 
     yield process, read_wc_client_output
     process.kill()
 
 
 @pytest.fixture(scope="module")
-def unix_ws(request):
+def unix_ws(request, address_family):
+    host, ipv6 = address_family
     try:
         os.unlink(NOTIFICATIONS_SOCK_PATH)
     except:
@@ -93,11 +106,14 @@ def unix_ws(request):
         devnull = open(os.devnull, 'wb')
         kwargs['stderr'] = devnull
         kwargs['stdout'] = devnull
-    process = subprocess.Popen([
-        "bin/foris-ws", "-d", "-a", "none", "--host", WS_HOST, "--port", str(WS_PORT),
+    args = [
+        "bin/foris-ws", "-d", "-a", "none", "--host", host, "--port", str(WS_PORT),
         "unix-socket", "--path", NOTIFICATIONS_SOCK_PATH
-    ], **kwargs)
-    _wait_for_opened_socket()
+    ]
+    if ipv6:
+        args.insert(1, "--ipv6")
+    process = subprocess.Popen(args, **kwargs)
+    _wait_for_opened_socket(host, ipv6)
 
     yield process, read_wc_client_output
     process.kill()
@@ -166,7 +182,10 @@ def ubusd_test():
 
 
 @pytest.fixture(scope="function")
-def ws_client():
+def ws_client(address_family):
+    host, ipv6 = address_family
+    if ipv6:
+        host = "[%s]" % host
     try:
         os.unlink(WS_OUTPUT)
     except:
@@ -208,7 +227,7 @@ def ws_client():
 
     def worker():
         ws = websocket.WebSocketApp(
-            "ws://%s:%d/" % (WS_HOST, WS_PORT),
+            "ws://%s:%d/" % (host, WS_PORT),
             on_message=on_message, on_open=on_open
         )
         started[0] = True

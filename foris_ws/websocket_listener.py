@@ -73,16 +73,26 @@ def message_received(client, server, message):
 
 
 def make_ws_listener(listen_host, listen_port, authenticate_method, ipv6=False):
-    logger.debug("Initializing websocket server on '%s:%d'." % (listen_host, listen_port))
-    server = WebsocketServer(listen_port, host=listen_host)
+
+    repr_host = listen_host
+    if ipv6:
+
+        class server_class(WebsocketServer):
+            address_family = socket.AF_INET6
+
+        if listen_host.count(":") > 1:  # ipv6 test
+            repr_host = "[%s]" % listen_host
+
+    else:
+
+        class server_class(WebsocketServer):
+            address_family = socket.AF_INET
+
+    logger.debug("Initializing websocket server on '%s:%d'." % (repr_host, listen_port))
+    server = server_class(listen_port, host=listen_host)
     server.set_fn_new_client(client_connected)
     server.set_fn_client_left(client_left)
     server.set_fn_message_received(message_received)
     server.set_fn_authenticate(authenticate_method)
-
-    if ipv6:
-        server.address_family = socket.AF_INET6
-    else:
-        server.address_family = socket.AF_INET
 
     return server

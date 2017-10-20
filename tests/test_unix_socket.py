@@ -19,7 +19,7 @@
 
 import json
 
-from fixtures import unix_ws, unix_controller, ws_client, unix_notify
+from fixtures import address_family, unix_ws, unix_controller, ws_client, unix_notify
 
 
 def test_incorrect_input(unix_ws, unix_controller, ws_client):

@@ -41,8 +41,8 @@ if __name__ == "__main__":
         help="Which authentication method should be used", required=True
     )
     parser.add_argument(
-        "--ipv6", type=bool, help="Should the ws server listen on ipv6 instead of ipv4",
-        default=False
+        "--ipv6", help="Should the ws server listen on ipv6 instead of ipv4",
+        action="store_true", default=False, dest="ipv6"
     )
     parser.add_argument(
         "--host", type=str, help="Hostname of the websocket server.", required=True
