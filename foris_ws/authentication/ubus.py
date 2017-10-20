@@ -19,14 +19,16 @@
 
 from __future__ import absolute_import
 
+import json
 import logging
 import re
 import ubus
+import subprocess
 
 logger = logging.getLogger(__name__)
 
 
-def authenticate(self, message):
+def authenticate(message):
         """ Performs an authentication based on authentication token placed in cookie
         and ubus session object.
 
@@ -38,7 +40,7 @@ def authenticate(self, message):
 
         logger.debug("Logging using authentication cookie of the ubus session object.")
         if not ubus.get_connected():
-            logger.debug("Conncting to ubus.")
+            logger.debug("Connecting to ubus.")
 
         cookie_lines = [
             e.strip() for e in message.split("\r\n") if e.strip().startswith("Cookie:")
@@ -50,10 +52,11 @@ def authenticate(self, message):
         foris_ws_session_re = re.search(
             r'foris.ws.session=([^;\s]*)', cookie_lines[0])
         if not foris_ws_session_re:
-            logger.debug("Foris session in cooking.")
+            logger.debug("Missing foris session in cookie.")
             return False
 
         session_id = foris_ws_session_re.group(1)
+        logger.debug("Using session id %s" % session_id)
 
         params = {
             "ubus_rpc_session": session_id or "",
@@ -63,13 +66,24 @@ def authenticate(self, message):
         }
 
         # Verify whether the client is able to access the listen function
-        try:
-            data = ubus.call("session", "access", params)
-        except:
+
+        # We need to open a separate program to verify the session_id
+        # beacause the program might be already listening on ubus in some mode
+        args = ['ubus', '-S', 'call', 'session', 'access', json.dumps(params)]
+        proces = subprocess.Popen(
+            args,
+            stdout=subprocess.PIPE
+        )
+        stdout, _ = proces.communicate()
+        if proces.returncode != 0:
             logger.debug("Session '%s' not found." % session_id)
             return False
 
+        data = json.loads(stdout)
+
         if data["access"]:
+            logger.debug("Connection granted.")
             return True
 
+        logger.debug("Connection denied.")
         return False
