@@ -1,3 +1,9 @@
+0.1.1 (2017-10-23)
+------------------
+
+* ubus authentication fix
+* small CI update (to test branches properly)
+
 0.1 (2017-10-20)
 ----------------
 
