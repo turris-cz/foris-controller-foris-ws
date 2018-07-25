@@ -25,6 +25,7 @@ import os
 
 import threading
 
+from foris_ws import __version__
 from foris_ws.websocket_listener import make_ws_listener
 from foris_ws.bus_listener import make_bus_listener
 
@@ -80,6 +81,7 @@ if __name__ == "__main__":
     # Parse the command line options
     parser = argparse.ArgumentParser(prog="foris-ws")
     parser.add_argument("-d", "--debug", dest="debug", action="store_true", default=False)
+    parser.add_argument('--version', action='version', version=__version__)
     parser.add_argument(
         "-a", "--authentication", type=str, choices=["ubus", "none"],
         help="Which authentication method should be used", required=True

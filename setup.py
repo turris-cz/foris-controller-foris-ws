@@ -20,7 +20,7 @@
 #
 
 from setuptools import setup
-from foris_ws import version
+from foris_ws import __version__
 
 DESCRIPTION = """
 Implementation of websocket server for foris notification system.
@@ -28,7 +28,7 @@ Implementation of websocket server for foris notification system.
 
 setup(
     name='foris-ws',
-    version=version,
+    version=__version__,
     author='CZ.NIC, z.s.p.o. (http://www.nic.cz/)',
     author_email='stepan.henek@nic.cz',
     packages=[
