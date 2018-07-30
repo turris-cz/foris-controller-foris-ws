@@ -1,3 +1,10 @@
+0.1.2 (2018-07-30)
+------------------
+
+* using entry_points for console scripts
+* print version to debug console
+* print version using --version argument
+
 0.1.1 (2017-10-23)
 ------------------
 
