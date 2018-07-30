@@ -20,7 +20,7 @@
 import argparse
 import logging
 import os
-
+import signal
 import threading
 
 from foris_ws import __version__
@@ -49,6 +49,11 @@ def manage_listeners(ws_listener, bus_listener):
     bus_listener_thread = threading.Thread(target=bus_listener.listen)
     bus_listener_thread.daemon = True
     bus_listener_thread.start()
+
+    # register signal to terminate threads
+    def signal_handler(signal, frame):
+        raise Exception("Exitting")
+    signal.signal(signal.SIGTERM, signal_handler)
 
     try:
         while True:
