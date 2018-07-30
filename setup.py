@@ -35,7 +35,6 @@ setup(
         'foris_ws',
         'foris_ws/authentication',
     ],
-    scripts=['bin/foris-ws'],
     url='https://gitlab.labs.nic.cz/turris/foris-ws',
     license='COPYING',
     description=DESCRIPTION,
@@ -51,4 +50,9 @@ setup(
         'pytest',
         'websocket-client',
     ],
+    entry_points={
+        "console_scripts": [
+            "foris-ws = foris_ws.__main__:main",
+        ]
+    },
 )

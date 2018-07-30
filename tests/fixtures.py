@@ -82,11 +82,11 @@ def ubus_ws(request, ubusd_test, address_family):
         kwargs['stderr'] = devnull
         kwargs['stdout'] = devnull
     args = [
-        "bin/foris-ws", "-d", "-a", "none", "--host", host, "--port", str(WS_PORT),
+        "python", "-m", "foris_ws", "-d", "-a", "none", "--host", host, "--port", str(WS_PORT),
         "ubus", "--path", UBUS_PATH
     ]
     if ipv6:
-        args.insert(1, "--ipv6")
+        args.insert(3, "--ipv6")
     process = subprocess.Popen(args, **kwargs)
     _wait_for_opened_socket(host, ipv6)
 
@@ -108,11 +108,11 @@ def unix_ws(request, address_family):
         kwargs['stderr'] = devnull
         kwargs['stdout'] = devnull
     args = [
-        "bin/foris-ws", "-d", "-a", "none", "--host", host, "--port", str(WS_PORT),
+        "python", "-m", "foris_ws", "-d", "-a", "none", "--host", host, "--port", str(WS_PORT),
         "unix-socket", "--path", NOTIFICATIONS_SOCK_PATH
     ]
     if ipv6:
-        args.insert(1, "--ipv6")
+        args.insert(3, "--ipv6")
     process = subprocess.Popen(args, **kwargs)
     _wait_for_opened_socket(host, ipv6)
 

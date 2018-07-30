@@ -1,8 +1,6 @@
-#!/usr/bin/env python
-
 #
 # foris-ws
-# Copyright (C) 2017 CZ.NIC, z.s.p.o. (http://www.nic.cz/)
+# Copyright (C) 2018 CZ.NIC, z.s.p.o. (http://www.nic.cz/)
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -62,22 +60,21 @@ def manage_listeners(ws_listener, bus_listener):
             if not bus_listener_thread.is_alive():
                 logger.error("bus listener is not running. Exiting...")
                 break
-    except:
+    except Exception:
         bus_listener.disconnect()
         try:
             ws_listener.shutdown()
-        except:
+        except Exception:
             pass
         try:
             ws_listener.server_close()
-        except:
+        except Exception:
             pass
         ws_listener_thread.join(1.0)
         bus_listener_thread.join(1.0)
 
 
-if __name__ == "__main__":
-
+def main():
     # Parse the command line options
     parser = argparse.ArgumentParser(prog="foris-ws")
     parser.add_argument("-d", "--debug", dest="debug", action="store_true", default=False)
@@ -136,3 +133,7 @@ if __name__ == "__main__":
     bus_listener = make_bus_listener(listener_class, options.path)
 
     manage_listeners(ws_listener, bus_listener)
+
+
+if __name__ == "__main__":
+    main()
