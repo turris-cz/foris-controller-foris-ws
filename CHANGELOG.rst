@@ -1,3 +1,8 @@
+0.1.3 (2018-07-30)
+------------------
+
+* properly handle termination via sigterm signal
+
 0.1.2 (2018-07-30)
 ------------------
 
