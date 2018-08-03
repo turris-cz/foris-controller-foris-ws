@@ -19,7 +19,7 @@
 
 import json
 
-from fixtures import address_family, ubusd_test, ubus_ws, ubus_controller, ws_client, ubus_notify
+from .fixtures import address_family, ubusd_test, ubus_ws, ubus_controller, ws_client, ubus_notify
 
 
 def test_incorrect_input(ubusd_test, ubus_ws, ubus_controller, ws_client):
