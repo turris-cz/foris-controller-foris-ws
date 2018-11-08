@@ -17,66 +17,18 @@
 # Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301  USA
 #
 
+import asyncio
 import argparse
 import logging
 import os
-import signal
-import threading
+import websockets
 
-from foris_ws import __version__
-from foris_ws.websocket_listener import make_ws_listener
-from foris_ws.bus_listener import make_bus_listener
+from . import __version__
 
-logger = logging.getLogger("foris_ws")
+from .bus_listener import make_bus_listener
+from .ws_handling import connection_handler as ws_connection_handler
 
-
-def manage_listeners(ws_listener, bus_listener):
-    """ Starts and waits for listener threads
-        and tries to perform a proper termination if necessary.
-
-    :param ws_listener: websocket server instance
-    :type ws_listener: websocket_server.WebsocketServer
-    :param bus_listener: foris socket listener instace
-    :type bus_listener: foris_client.buses.base.BaseListener
-    """
-
-    logger.debug("Starting to listen to websocket server.")
-    ws_listener_thread = threading.Thread(target=ws_listener.run_forever)
-    ws_listener_thread.daemon = True
-    ws_listener_thread.start()
-
-    logger.debug("Starting to listen to foris bus.")
-    bus_listener_thread = threading.Thread(target=bus_listener.listen)
-    bus_listener_thread.daemon = True
-    bus_listener_thread.start()
-
-    # register signal to terminate threads
-    def signal_handler(signal, frame):
-        raise Exception("Exitting")
-    signal.signal(signal.SIGTERM, signal_handler)
-
-    try:
-        while True:
-            ws_listener_thread.join(0.2)
-            if not ws_listener_thread.is_alive():
-                logger.error("websocket server is not running. Exiting...")
-                break
-            bus_listener_thread.join(0.2)
-            if not bus_listener_thread.is_alive():
-                logger.error("bus listener is not running. Exiting...")
-                break
-    except Exception:
-        bus_listener.disconnect()
-        try:
-            ws_listener.shutdown()
-        except Exception:
-            pass
-        try:
-            ws_listener.server_close()
-        except Exception:
-            pass
-        ws_listener_thread.join(1.0)
-        bus_listener_thread.join(1.0)
+logger = logging.getLogger(__name__)
 
 
 def main():
@@ -133,11 +85,33 @@ def main():
     elif options.authentication == "none":
         from foris_ws.authentication.none import authenticate
 
-    # prepare workers
-    ws_listener = make_ws_listener(options.host, options.port, authenticate, options.ipv6)
+    loop = asyncio.get_event_loop()
+
+    # prepare bus listener
     bus_listener = make_bus_listener(listener_class, options.path)
 
-    manage_listeners(ws_listener, bus_listener)
+    async def run_listener():
+        logger.debug("Starting to listen to foris bus.")
+        res = await loop.run_in_executor(None, bus_listener.listen)
+        logger.debug("Finished listening to foris bus. (res=%s)", res)
+
+    # TODO ipv6 option
+
+    # prepare websocket
+    websocket_server = websockets.serve(
+        ws_connection_handler,
+        options.host,
+        options.port,
+        #process_request=authenticate,
+    )
+
+    loop.run_until_complete(
+        asyncio.wait([
+            websocket_server,
+            run_listener(),
+        ])
+    )
+    loop.run_forever()
 
 
 if __name__ == "__main__":

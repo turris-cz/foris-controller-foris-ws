@@ -18,34 +18,29 @@
 #
 
 
+import asyncio
 import json
 import logging
-import time
 import threading
-import websocket_server
+import websockets
+
+from typing import List, Set, Union, Callable, Type
 
 from functools import wraps
 from collections import Iterable
 
 logger = logging.getLogger(__name__)
 
-try:
-    basestring
-except NameError:
-    basestring = str  # python 3 consolidation
-
 
 class IncorrectMessage(Exception):
     pass
 
 
-def _with_lock(func):
+def _with_lock(func: Callable) -> Callable:
     """Wraps function with self.lock
 
     :param func: the function to be wrapped
-    :type func: callable
     :returns: wrapped function
-    :rtype: callable
     """
 
     @wraps(func)
@@ -56,76 +51,50 @@ def _with_lock(func):
     return inner
 
 
-def ping_worker(connection, timeout):
-    """ Periodically sends a ping via connection
-    :param connection: connection instance
-    :type connection: Connection
-    :param timeout: timeout which will be used between the pings
-    :type timeout: float
-    """
-    while True:
-        time.sleep(timeout)
-        if connection.exiting:
-            break
-        else:
-            connection.send_ping()
-
-
-class Connection(object):
+class Connection:
     """ Class which represents the connection between the client and the websocket server
     """
-    PING_THREAD_TIMEOUT = 60.0
+    PING_THREAD_TIMEOUT: float = 60.0
 
-    def __init__(self, client_id, handler, server):
-        """ Initializes the connection and starts the ping thread
+    def __init__(self, client_id: int, handler: websockets.WebSocketServerProtocol):
+        """ Initializes the connection
 
         :param client_id: unique client id
-        :type client_id: int
         :param handler: handler which is used to communicate with the client
-        :param server: server instance
-        :type server: websocket_server.WebsocketServer
         """
-        self.client_id = client_id
-        self.handler = handler
-        self.server = server
-        self.lock = threading.Lock()
-        self.modules = set()
-        self.exiting = False
-
-        # ping thread handling
-        self.ping_thread = threading.Thread(
-            target=ping_worker, args=(self, Connection.PING_THREAD_TIMEOUT))
-        logger.debug("Starting ping thread (timeout=%d)." % Connection.PING_THREAD_TIMEOUT)
-        self.ping_thread.start()
+        self.client_id: int = client_id
+        self.handler: websockets.WebSocketServerProtocol = handler
+        self.lock: threading.Lock = threading.Lock()
+        self.modules: Set[str] = set()
+        self.exiting: bool = False
 
     @staticmethod
-    def _prepare_modules(modules):
+    def _prepare_modules(modules: Union[List[str], str]) -> List[str]:
         """ Prepares and checks whether the modules are valid.
         :param modules: list of available modules
-        :type modules: list(str)
         :returns: processed modules
-        :rtype: list(str)
         :raises IncorrectMessage: on incorrect modules format
         """
-        if isinstance(modules, basestring):
+        res: List[str] = []
+        if isinstance(modules, str):
             return [modules]
         if not isinstance(modules, Iterable):
             logger.warning("Invalid module list '%s'." % modules)
             raise IncorrectMessage("Not a valid module list '%s'" % modules)
 
         for module in modules:
-            if not isinstance(module, basestring):
+            if isinstance(module, str):
+                res.append(module)
+            else:
                 logger.warning("Module item is not a string '%s'." % module)
                 raise IncorrectMessage("Module item is not a string '%s'" % module)
-        return modules
+        return res
 
-    def _subscribe(self, modules):
+    def _subscribe(self, modules: List[str]) -> dict:
         """ Subscribes modules to the client and prepares appropriate response
 
         :param modules: moduels to subscribe
-        :type modules: list(str)
         :returns: response to client
-        :rtype: dict
         :raises IncorrectMessage: on incorrect modules format
         """
 
@@ -135,13 +104,11 @@ class Connection(object):
         logger.debug("Client '%d' subscriptions: %s" % (self.client_id, ", ".join(self.modules)))
         return {"result": True, "subscriptions": list(self.modules)}
 
-    def _unsubscribe(self, modules):
+    def _unsubscribe(self, modules: List[str]) -> dict:
         """ Unsubscribes modules to the client and prepares appropriate response
 
         :param modules: moduels to subscribe
-        :type modules: list(str)
         :returns: response to client
-        :rtype: dict
         :raises IncorrectMessage: on incorrect modules format
         """
 
@@ -152,129 +119,119 @@ class Connection(object):
         return {"result": True, "subscriptions": list(self.modules)}
 
     @_with_lock
-    def send_ping(self):
-        """ Sends a websocket's protocol ping to the client
-        """
-        logger.info("Sending ping to client '%d'.", self.client_id)
-        self.handler.send_text("ping!", websocket_server.OPCODE_PING)
-
-    @_with_lock
-    def send_message_to_client(self, msg):
+    async def send_message_to_client(self, msg: dict):
         """ Sends a message to the connected client
         :param msg: message to be sent to the client (in json format)
         :type msg: dict
         """
         str_msg = json.dumps(msg)
         logger.debug("Sending message to client %d: %s", self.client_id, str_msg)
-        self.handler.send_message(str_msg)
+        await self.handler.send(str_msg)
 
-    def process_message(self, message):
+    async def process_message(self, message: str):
         """ Processes a message which is recieved from the client
         :param message: message which will be processed
-        :type message: str
         """
         try:
             try:
-                message = json.loads(message)
+                parsed: dict = json.loads(message)
             except ValueError:
                 logger.warning("The message is not in json format. (%s)" % message)
                 raise IncorrectMessage("Not in json format.")
 
-            if "action" not in message:
+            if "action" not in parsed:
                 logger.warning("Action was not defined in the message.")
                 raise IncorrectMessage("Action not defined.")
 
-            if "params" not in message:
+            if "params" not in parsed:
                 logger.warning("Params were not defined in the message.")
                 raise IncorrectMessage("Params not defined.")
 
-            if message["action"] == "subscribe":
-                self.send_message_to_client(self._subscribe(message["params"]))
+            if parsed["action"] == "subscribe":
+                await self.send_message_to_client(self._subscribe(parsed["params"]))
                 return
-            elif message["action"] == "unsubscribe":
-                self.send_message_to_client(self._unsubscribe(message["params"]))
+            elif parsed["action"] == "unsubscribe":
+                await self.send_message_to_client(self._unsubscribe(parsed["params"]))
                 return
 
-            logger.warning("Unkown action '%s'" % message["action"])
-            raise IncorrectMessage("Unknown action '%s'" % message["action"])
+            logger.warning("Unkown action '%s'" % parsed["action"])
+            raise IncorrectMessage("Unknown action '%s'" % parsed["action"])
         except IncorrectMessage as e:
-            self.send_message_to_client({"result": False, "error": str(e)})
+            await self.send_message_to_client({"result": False, "error": str(e)})
 
     def close(self):
         """ Sets a flag which should eventually close the connection.
         """
-        # notify ping thread to exit
         self.exiting = True
 
 
-class Connections(object):
+class Connections:
     """ Class which represents all active connections
     """
+    client_id: int = 1
 
     def __init__(self):
         """ Initializes Connections
         """
         self.lock = threading.Lock()
         self._connections = {}
+        self.current_event_loop: Type[asyncio.AbstractEventLoop] = asyncio.get_event_loop()
 
     @_with_lock
-    def append_connection(self, client_id, handler, server):
+    async def register_connection(self, handler: websockets.WebSocketServerProtocol):
         """ creates and adds a Connection instance among active connections
 
-        :param client_id: unique client id
-        :type client_id: int
         :param handler: handler which is used to communicate with the client
-        :param server: server instance
-        :type server: websocket_server.WebsocketServer
         """
-        self._connections[client_id] = Connection(client_id, handler, server)
+        new_client_id = Connections.client_id
+        self._connections[new_client_id] = Connection(new_client_id, handler)
+        Connections.client_id += 1
+        return new_client_id
 
     @_with_lock
-    def remove_connection(self, client_id):
+    def remove_connection(self, client_id: int):
         """ removes a Connection instance from active connections
 
         :param client_id: unique client id
-        :type client_id: int
         """
         if client_id not in self._connections:
             return
         try:
             self._connections[client_id].close()
-        except:
+        except Exception:
             pass
         del self._connections[client_id]
 
     @_with_lock
-    def handle_message(self, client_id, message):
+    async def handle_message(self, client_id: int, message: str):
         """ Handles a message recieved from the client
 
         :param client_id: unique client id
-        :type client_id: int
         :param message: message to be handeled
-        :type message: str
         """
         if client_id not in self._connections:
             logging.warning("Client '%d' is present it the connection list" % client_id)
             return
         try:
-            self._connections[client_id].process_message(message)
+            await self._connections[client_id].process_message(message)
         except Exception as e:
             logging.error("Exception was raised: %s" % str(e))
             raise
 
     @_with_lock
-    def publish_notification(self, module, message):
+    def publish_notification(self, module: str, message: dict):
         """ Publishes notification of the module to clients which have the module subscribed
             does nothing if no module is present in the message
 
         :param module: name of the module related to the notification
-        :type module: str
         :param message: a notification which will be published to all relevant clients
-        :type message: dict
         """
         for _, connection in self._connections.items():
             if module in connection.modules:
-                connection.send_message_to_client(message)
+                asyncio.run_coroutine_threadsafe(  # can be scheduled from another thread
+                    connection.send_message_to_client(message),
+                    self.current_event_loop,
+                )
 
 
 connections = Connections()

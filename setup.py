@@ -41,7 +41,7 @@ setup(
     long_description=open('README.rst').read(),
     requires=[
         'foris_client',
-        'websocket_server',
+        'websockets',
     ],
     setup_requires=[
         'pytest-runner',

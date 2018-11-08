@@ -1,6 +1,6 @@
 #
 # foris-ws
-# Copyright (C) 2017 CZ.NIC, z.s.p.o. (http://www.nic.cz/)
+# Copyright (C) 2018 CZ.NIC, z.s.p.o. (http://www.nic.cz/)
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -17,42 +17,32 @@
 # Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301  USA
 #
 
-import threading
 import logging
+
+from typing import Type
+from foris_client.buses.base import BaseListener
 
 from .connection import connections
 
 logger = logging.getLogger(__name__)
 
 
-def send_notification_worker(notification):
-    """ Sends a notification via all active connections.
+def handler(notification: dict):
+    """ Recieves a notifiation and triggers coroutine to propage it
 
     :param notification: notification to be sent
     :param notification: dict
     """
+    logger.debug("Handling bus notification: %s", notification)
     connections.publish_notification(notification["module"], notification)
+    logger.debug("Handling finished: %s", notification)
 
 
-def handler(notification):
-    """ Recieves a notifiation and starts a thread which is responsible for publishing it
-
-    :param notification: notification to be processsed
-    :param notification: dict
-    """
-    logger.debug("Notification recieved: %s" % notification)
-    thread = threading.Thread(target=send_notification_worker, args=(notification, ))
-    thread.daemon = True
-    thread.start()
-
-
-def make_bus_listener(listener_class, socket_path):
+def make_bus_listener(listener_class: Type[BaseListener], socket_path: str) -> BaseListener:
     """ Prepares a new foris notification listener
 
     :param listener_class: listener class to be used (UbusListener, UnixSocketListner, ...)
-    :type listener_class: type
     :param socket_path: path to socket
-    :type socket_path: str
     :returns: instantiated listener
     :rtype: foris_client.buses.base.BaseListener
     """
