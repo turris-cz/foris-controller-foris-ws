@@ -17,6 +17,7 @@
 # Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301  USA
 #
 
+import copy
 import os
 import pytest
 import subprocess
@@ -76,7 +77,9 @@ def ubus_ws(request, ubusd_test, address_family):
     while not os.path.exists(UBUS_PATH):
         time.sleep(0.3)
 
-    kwargs = {}
+    new_env = copy.deepcopy(dict(os.environ))
+    new_env["FORIS_WS_UBUS_AUTH_SOCK"] = UBUS_PATH
+    kwargs = {"env": new_env}
     if not request.config.getoption("--debug-output"):
         devnull = open(os.devnull, 'wb')
         kwargs['stderr'] = devnull
@@ -85,8 +88,6 @@ def ubus_ws(request, ubusd_test, address_family):
         "python", "-m", "foris_ws", "-d", "-a", "none", "--host", host, "--port", str(WS_PORT),
         "ubus", "--path", UBUS_PATH
     ]
-    if ipv6:
-        args.insert(3, "--ipv6")
     process = subprocess.Popen(args, **kwargs)
     _wait_for_opened_socket(host, ipv6)
 
@@ -102,7 +103,9 @@ def unix_ws(request, address_family):
     except:
         pass
 
-    kwargs = {}
+    new_env = copy.deepcopy(dict(os.environ))
+    new_env["FORIS_WS_UBUS_AUTH_SOCK"] = UBUS_PATH
+    kwargs = {"env": new_env}
     if not request.config.getoption("--debug-output"):
         devnull = open(os.devnull, 'wb')
         kwargs['stderr'] = devnull
@@ -111,8 +114,6 @@ def unix_ws(request, address_family):
         "python", "-m", "foris_ws", "-d", "-a", "none", "--host", host, "--port", str(WS_PORT),
         "unix-socket", "--path", NOTIFICATIONS_SOCK_PATH
     ]
-    if ipv6:
-        args.insert(3, "--ipv6")
     process = subprocess.Popen(args, **kwargs)
     _wait_for_opened_socket(host, ipv6)
 

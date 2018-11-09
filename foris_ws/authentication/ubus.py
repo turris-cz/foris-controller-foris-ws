@@ -1,6 +1,6 @@
 #
 # foris-ws
-# Copyright (C) 2017 CZ.NIC, z.s.p.o. (http://www.nic.cz/)
+# Copyright (C) 2018 CZ.NIC, z.s.p.o. (http://www.nic.cz/)
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -17,43 +17,38 @@
 # Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301  USA
 #
 
-from __future__ import absolute_import
-
 import json
 import logging
 import re
-import ubus
 import subprocess
+import os
+
+from http import HTTPStatus
+from typing import Optional, Tuple
+from websockets.http import Headers
 
 logger = logging.getLogger(__name__)
 
 
-def authenticate(message):
+def authenticate(path: str, request_headers: Headers) -> Optional[Tuple[int, Headers, bytes]]:
         """ Performs an authentication based on authentication token placed in cookie
         and ubus session object.
 
         :param message: should contain clients initial request
-        :type message: str
-        :returns: True when the authentication passes False otherwise
         :rtype: bool
         """
 
         logger.debug("Logging using authentication cookie of the ubus session object.")
-        if not ubus.get_connected():
-            logger.debug("Connecting to ubus.")
 
-        cookie_lines = [
-            e.strip() for e in message.split("\r\n") if e.strip().startswith("Cookie:")
-        ]
-        if not cookie_lines:
+        if "Cookie" not in request_headers:
             logger.debug("Missing cookie.")
-            return False
+            return HTTPStatus.FORBIDDEN, Headers([]), b'Missing Cookie'
 
         foris_ws_session_re = re.search(
-            r'foris.ws.session=([^;\s]*)', cookie_lines[0])
+            r'foris.ws.session=([^;\s]*)', request_headers["Cookie"])
         if not foris_ws_session_re:
-            logger.debug("Missing foris session in cookie.")
-            return False
+            logger.debug("Missing foris.ws.session in cookie.")
+            return HTTPStatus.FORBIDDEN, Headers([]), b'Missing foris.ws.session in cookie'
 
         session_id = foris_ws_session_re.group(1)
         logger.debug("Using session id %s" % session_id)
@@ -70,6 +65,10 @@ def authenticate(message):
         # We need to open a separate program to verify the session_id
         # beacause the program might be already listening on ubus in some mode
         args = ['ubus', '-S', 'call', 'session', 'access', json.dumps(params)]
+        if "FORIS_WS_UBUS_AUTH_SOCK" in os.environ:
+            args.insert(1, os.environ["FORIS_WS_UBUS_AUTH_SOCK"])
+            args.insert(1, "-s")
+
         proces = subprocess.Popen(
             args,
             stdout=subprocess.PIPE
@@ -77,13 +76,13 @@ def authenticate(message):
         stdout, _ = proces.communicate()
         if proces.returncode != 0:
             logger.debug("Session '%s' not found." % session_id)
-            return False
+            return HTTPStatus.FORBIDDEN, Headers([]), b'Session not found'
 
         data = json.loads(stdout)
 
-        if data["access"]:
-            logger.debug("Connection granted.")
-            return True
+        if not data["access"]:
+            logger.debug("Connection denied.")
+            return HTTPStatus.FORBIDDEN, Headers([]), b'Access for session denied'
 
-        logger.debug("Connection denied.")
-        return False
+        logger.debug("Connection granted.")
+        return None

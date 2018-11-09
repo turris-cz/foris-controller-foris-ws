@@ -23,15 +23,16 @@ import logging
 import os
 import websockets
 
-from . import __version__
+from typing import NoReturn
 
+from . import __version__
 from .bus_listener import make_bus_listener
 from .ws_handling import connection_handler as ws_connection_handler
 
 logger = logging.getLogger(__name__)
 
 
-def main():
+def main() -> NoReturn:
     # Parse the command line options
     parser = argparse.ArgumentParser(prog="foris-ws")
     parser.add_argument("-d", "--debug", dest="debug", action="store_true", default=False)
@@ -39,10 +40,6 @@ def main():
     parser.add_argument(
         "-a", "--authentication", type=str, choices=["ubus", "none"],
         help="Which authentication method should be used", required=True
-    )
-    parser.add_argument(
-        "--ipv6", help="Should the ws server listen on ipv6 instead of ipv4",
-        action="store_true", default=False, dest="ipv6"
     )
     parser.add_argument(
         "--host", type=str, help="Hostname of the websocket server.", required=True
@@ -95,14 +92,12 @@ def main():
         res = await loop.run_in_executor(None, bus_listener.listen)
         logger.debug("Finished listening to foris bus. (res=%s)", res)
 
-    # TODO ipv6 option
-
     # prepare websocket
     websocket_server = websockets.serve(
         ws_connection_handler,
         options.host,
         options.port,
-        #process_request=authenticate,
+        process_request=authenticate,
     )
 
     loop.run_until_complete(
