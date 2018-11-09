@@ -1,3 +1,8 @@
+1.0 (2018-11-09)
+----------------
+
+* using more mature websockets framework (based on asyncio)
+
 0.2 (2018-08-14)
 ----------------
 

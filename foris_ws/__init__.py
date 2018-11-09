@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-
 #
 # foris-ws
 # Copyright (C) 2017 CZ.NIC, z.s.p.o. (http://www.nic.cz/)
@@ -20,4 +18,4 @@
 #
 
 
-__version__ = "0.2"
+__version__ = "0.3"
