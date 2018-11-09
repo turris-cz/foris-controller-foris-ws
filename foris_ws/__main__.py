@@ -22,6 +22,7 @@ import argparse
 import logging
 import os
 import websockets
+import signal
 
 from typing import NoReturn
 
@@ -87,6 +88,13 @@ def main() -> NoReturn:
     # prepare bus listener
     bus_listener = make_bus_listener(listener_class, options.path)
 
+    def shutdown():
+        bus_listener.disconnect()
+        loop.stop()
+
+    loop.add_signal_handler(signal.SIGTERM, shutdown)
+    loop.add_signal_handler(signal.SIGINT, shutdown)
+
     async def run_listener():
         logger.debug("Starting to listen to foris bus.")
         res = await loop.run_in_executor(None, bus_listener.listen)
@@ -100,12 +108,8 @@ def main() -> NoReturn:
         process_request=authenticate,
     )
 
-    loop.run_until_complete(
-        asyncio.wait([
-            websocket_server,
-            run_listener(),
-        ])
-    )
+    asyncio.ensure_future(websocket_server)
+    asyncio.ensure_future(run_listener())
     loop.run_forever()
 
 
