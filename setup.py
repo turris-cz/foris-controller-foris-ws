@@ -39,9 +39,9 @@ setup(
     license='COPYING',
     description=DESCRIPTION,
     long_description=open('README.rst').read(),
-    requires=[
-        'foris_client',
+    install_requires=[
         'websockets',
+        'foris-client',
     ],
     setup_requires=[
         'pytest-runner',

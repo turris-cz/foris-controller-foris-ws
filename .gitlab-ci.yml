@@ -3,7 +3,6 @@ stages:
 
 .run_script: &run_script
   script:
-    - pip install -r requirements.txt
     - git clone https://gitlab.labs.nic.cz/turris/foris-schema.git
     - cd foris-schema
     - (git checkout refs/remotes/origin/${CI_COMMIT_REF_NAME} || true)
@@ -23,11 +22,6 @@ stages:
     - rm -rf {foris-controller,foris-schema,foris-client}
     - export LD_LIBRARY_PATH=:/usr/local/lib
     - python setup.py test
-
-test_python2:
-  image: registry.labs.nic.cz/turris/foris-ci/python2
-  stage: test
-  <<: *run_script
 
 test_python3:
   image: registry.labs.nic.cz/turris/foris-ci/python3

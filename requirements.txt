@@ -1,4 +1,0 @@
-pytest
-pytest-runner
-websocket-client
--e git+https://github.com/shenek/python-websocket-server.git@to_upstream2#egg=websocket-server
