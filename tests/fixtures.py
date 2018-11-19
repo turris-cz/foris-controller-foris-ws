@@ -62,8 +62,12 @@ def _wait_for_opened_socket(host, ipv6):
         except Exception as e:
             time.sleep(0.2)
 
+@pytest.fixture(params=["none", "ubus"], ids=["auth_none", "auth_ubus"], scope="function")
+def authentication(request):
+    return request.param
 
-@pytest.fixture(params=["ipv6", "ipv4"], scope="module")
+
+@pytest.fixture(params=["ipv6", "ipv4"], scope="function")
 def address_family(request):
     if request.param == "ipv6":
         return WS_HOST6, True
@@ -71,8 +75,8 @@ def address_family(request):
         return WS_HOST4, False
 
 
-@pytest.fixture(scope="module")
-def ubus_ws(request, ubusd_test, address_family):
+@pytest.fixture(scope="function")
+def ubus_ws(request, ubusd_test, address_family, authentication, rpcd):
     host, ipv6 = address_family
     while not os.path.exists(UBUS_PATH):
         time.sleep(0.3)
@@ -85,18 +89,18 @@ def ubus_ws(request, ubusd_test, address_family):
         kwargs['stderr'] = devnull
         kwargs['stdout'] = devnull
     args = [
-        "python", "-m", "foris_ws", "-d", "-a", "none", "--host", host, "--port", str(WS_PORT),
+        "python", "-m", "foris_ws", "-d", "-a", authentication, "--host", host, "--port", str(WS_PORT),
         "ubus", "--path", UBUS_PATH
     ]
     process = subprocess.Popen(args, **kwargs)
     _wait_for_opened_socket(host, ipv6)
 
-    yield process, read_wc_client_output
+    yield process, read_wc_client_output, host, WS_PORT
     process.kill()
 
 
-@pytest.fixture(scope="module")
-def unix_ws(request, address_family):
+@pytest.fixture(scope="function")
+def unix_ws(request, ubusd_test, address_family, authentication, rpcd):
     host, ipv6 = address_family
     try:
         os.unlink(NOTIFICATIONS_SOCK_PATH)
@@ -111,17 +115,17 @@ def unix_ws(request, address_family):
         kwargs['stderr'] = devnull
         kwargs['stdout'] = devnull
     args = [
-        "python", "-m", "foris_ws", "-d", "-a", "none", "--host", host, "--port", str(WS_PORT),
+        "python", "-m", "foris_ws", "-d", "-a", authentication, "--host", host, "--port", str(WS_PORT),
         "unix-socket", "--path", NOTIFICATIONS_SOCK_PATH
     ]
     process = subprocess.Popen(args, **kwargs)
     _wait_for_opened_socket(host, ipv6)
 
-    yield process, read_wc_client_output
+    yield process, read_wc_client_output, host, WS_PORT
     process.kill()
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture(scope="function")
 def unix_controller(request, unix_ws):
     try:
         os.unlink(SOCK_PATH)
@@ -145,7 +149,7 @@ def unix_controller(request, unix_ws):
     process.kill()
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture(scope="function")
 def ubus_controller(request, ubusd_test, ubus_ws):
     while not os.path.exists(UBUS_PATH):
         time.sleep(0.3)
@@ -184,7 +188,18 @@ def ubusd_test():
 
 
 @pytest.fixture(scope="function")
-def ws_client(address_family):
+def rpcd(ubusd_test):
+
+    while not os.path.exists(UBUS_PATH):
+        time.sleep(0.2)
+
+    rpcd_instance = subprocess.Popen(["rpcd", "-s", UBUS_PATH])
+    yield rpcd_instance
+    rpcd_instance.kill()
+
+
+@pytest.fixture(scope="function")
+def ws_client(address_family, rpcd):
     host, ipv6 = address_family
     if ipv6:
         host = "[%s]" % host
@@ -192,6 +207,21 @@ def ws_client(address_family):
         os.unlink(WS_OUTPUT)
     except:
         pass
+
+    # create cookies in ubus
+    subprocess.check_output([
+        "ubus", "-s", UBUS_PATH,  "wait_for", "session",
+    ])
+    raw_session = subprocess.check_output([
+        "ubus", "-s", UBUS_PATH,  "call", "session", "create", '{"timeout":600}'
+    ])
+    session_id = json.loads(raw_session)["ubus_rpc_session"]
+    subprocess.check_output([
+        "ubus", "-s", UBUS_PATH,  "call", "session", "grant", json.dumps({
+            "ubus_rpc_session": session_id, "scope": "ubus",
+            "objects": [["websocket-listen", "listen-allowed"]]
+        })
+    ])
 
     exiting = [False]
     started = [False]
@@ -230,7 +260,8 @@ def ws_client(address_family):
     def worker():
         ws = websocket.WebSocketApp(
             "ws://%s:%d/" % (host, WS_PORT),
-            on_message=on_message, on_open=on_open
+            on_message=on_message, on_open=on_open,
+            cookie="foris.ws.session=%s" % session_id,
         )
         started[0] = True
         ws.run_forever()
@@ -242,7 +273,7 @@ def ws_client(address_family):
     while not started[0]:
         time.sleep(0.2)
 
-    yield send_message
+    yield send_message, session_id
     exiting[0] = True
     thread.join(0.2)
 
@@ -254,7 +285,10 @@ def unix_notify(unix_ws):
         time.sleep(0.2)
     sender = UnixSocketNotificationSender(NOTIFICATIONS_SOCK_PATH)
     yield sender
-    sender.disconnect()
+    try:
+        sender.disconnect()
+    except RuntimeError:
+        pass  # wasn't connected
 
 
 @pytest.fixture(scope="function")
@@ -264,4 +298,7 @@ def ubus_notify(ubus_ws):
         time.sleep(0.2)
     sender = UbusNotificationSender(UBUS_PATH)
     yield sender
-    sender.disconnect()
+    try:
+        sender.disconnect()
+    except RuntimeError:
+        pass  # wasn't connected

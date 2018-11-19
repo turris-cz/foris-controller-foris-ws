@@ -18,13 +18,20 @@
 #
 
 import json
+import pytest
+import subprocess
+import websocket
 
-from .fixtures import address_family, ubusd_test, ubus_ws, ubus_controller, ws_client, ubus_notify
+from .fixtures import (
+    authentication, address_family, ubusd_test, rpcd, ubus_ws, ubus_controller, ws_client,
+    ubus_notify, UBUS_PATH,
+)
 
 
 def test_incorrect_input(ubusd_test, ubus_ws, ubus_controller, ws_client):
-    _, read_output = ubus_ws
+    _, read_output, _, _ = ubus_ws
     last_output = read_output()
+    ws_client, _ = ws_client
     ws_client("rgh")
     last_output = read_output(last_output)
     assert last_output[-1]['error'] == 'Not in json format.'
@@ -44,8 +51,9 @@ def test_incorrect_input(ubusd_test, ubus_ws, ubus_controller, ws_client):
 
 
 def test_subscribe_and_unsubscribe(ubusd_test, ubus_ws, ubus_controller, ws_client):
-    _, read_output = ubus_ws
+    _, read_output, _, _ = ubus_ws
     last_output = read_output()
+    ws_client, _ = ws_client
     ws_client(json.dumps({"action": "subscribe", "params": ["test1", "test2", "test3"]}))
     last_output = read_output(last_output)
     assert last_output[-1]["result"] is True
@@ -57,8 +65,9 @@ def test_subscribe_and_unsubscribe(ubusd_test, ubus_ws, ubus_controller, ws_clie
 
 
 def test_notification(ubusd_test, ubus_ws, ubus_controller, ws_client, ubus_notify):
-    _, read_output = ubus_ws
+    _, read_output, _, _ = ubus_ws
     last_output = read_output()
+    ws_client, _ = ws_client
 
     ws_client(json.dumps({"action": "subscribe", "params": ["testa", "testb", "testc"]}))
     last_output = read_output(last_output)
@@ -91,3 +100,52 @@ def test_notification(ubusd_test, ubus_ws, ubus_controller, ws_client, ubus_noti
     ubus_notify.notify("testd", "testd", {"test": "d"})
     last_output = read_output(last_output)
     assert {e["module"] for e in last_output if "module" in e} == {"testa", "testb", "testd"}
+
+
+@pytest.mark.parametrize("authentication", ["ubus"], ids=["auth_ubus"], indirect=True, scope="function")
+def test_authentication_ubus(authentication, ubus_ws, rpcd, ubus_controller):
+    _, _, host, port = ubus_ws
+
+    # test fail
+    ws = websocket.WebSocket()
+    with pytest.raises(websocket.WebSocketBadStatusException):
+        ws.connect(
+            "ws://%s:%d/" % ("[%s]" % host if ":" in host else host, port),
+            cookie="foris.ws.session=%s" % "EEEEEEEEEEEEEE",
+        )
+        ws.close()
+
+    # test pass
+    subprocess.check_output([
+        "ubus", "-s", UBUS_PATH,  "wait_for", "session",
+    ])
+    raw_session = subprocess.check_output([
+        "ubus", "-s", UBUS_PATH,  "call", "session", "create", '{"timeout":600}'
+    ])
+    session_id = json.loads(raw_session)["ubus_rpc_session"]
+    subprocess.check_output([
+        "ubus", "-s", UBUS_PATH,  "call", "session", "grant", json.dumps({
+            "ubus_rpc_session": session_id, "scope": "ubus",
+            "objects": [["websocket-listen", "listen-allowed"]]
+        })
+    ])
+
+    ws.connect(
+        "ws://%s:%d/" % ("[%s]" % host if ":" in host else host, port),
+        cookie="foris.ws.session=%s" % session_id,
+    )
+    ws.send(b'{"action": "subscribe", "params": ["testd"]}')
+    res = ws.recv()
+    assert json.loads(res)["result"]
+    ws.close()
+
+    # test rpcd not running
+    rpcd.terminate()
+    rpcd.wait()
+
+    with pytest.raises(websocket.WebSocketBadStatusException):
+        ws.connect(
+            "ws://%s:%d/" % ("[%s]" % host if ":" in host else host, port),
+            cookie="foris.ws.session=%s" % session_id,
+        )
+        ws.close()
