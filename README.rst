@@ -6,13 +6,13 @@ Requirements
 ============
 
 * python2/3
-* python-websocket-server (waiting for upstream to merge my changes  see https://github.com/shenek/python-websocket-server)
+* python-websockets
 * foris-client
 
 Installation
 ============
 
-	``python setup.py install``
+	``pip install .``
 
 Usage
 =====
