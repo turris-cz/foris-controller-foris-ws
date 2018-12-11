@@ -1,26 +1,18 @@
+before_script:
+  - pip install virtualenv
+  - virtualenv -p "$(which python)" /tmp/test
+
 stages:
   - test
 
 .run_script: &run_script
   script:
-    - git clone https://gitlab.labs.nic.cz/turris/foris-schema.git
-    - cd foris-schema
-    - (git checkout refs/remotes/origin/${CI_COMMIT_REF_NAME} || true)
-    - python setup.py install
-    - cd ..
-    - git clone https://gitlab.labs.nic.cz/turris/foris-controller.git
-    - cd foris-controller
-    - (git checkout refs/remotes/origin/${CI_COMMIT_REF_NAME} || true)
-    - python setup.py install
-    - cd ..
-    - git clone https://gitlab.labs.nic.cz/turris/foris-client.git
-    - cd foris-client
-    - (git checkout refs/remotes/origin/${CI_COMMIT_REF_NAME} || true)
-    - python setup.py install
-    - cd ..
-    - python setup.py install
-    - rm -rf {foris-controller,foris-schema,foris-client}
-    - export LD_LIBRARY_PATH=:/usr/local/lib
+    - source /tmp/test/bin/activate
+
+    - pip install .
+
+    - pip install git+https://gitlab.labs.nic.cz/turris/foris-controller.git#egg=foris-controller
+
     - python setup.py test
 
 test_python3:
