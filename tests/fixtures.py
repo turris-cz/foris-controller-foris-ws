@@ -27,6 +27,8 @@ import websocket
 import json
 import threading
 
+from paho.mqtt import client as mqtt
+
 
 UBUS_PATH = "/tmp/ubus-foris-ws-test.soc"
 SOCK_PATH = "/tmp/foris-ws-test.soc"
@@ -35,6 +37,8 @@ WS_HOST4 = "127.0.0.1"
 WS_HOST6 = "::1"
 WS_PORT = 8888
 WS_OUTPUT = "/tmp/foris-ws-test-output.json"
+MQTT_PORT = 11883
+MQTT_HOST = "localhost"
 
 
 def read_wc_client_output(old_data=None):
@@ -126,6 +130,29 @@ def unix_ws(request, ubusd_test, address_family, authentication, rpcd):
 
 
 @pytest.fixture(scope="function")
+def mqtt_ws(request, mosquitto_test, address_family, authentication, rpcd):
+    host, ipv6 = address_family
+
+    new_env = copy.deepcopy(dict(os.environ))
+    new_env["FORIS_WS_UBUS_AUTH_SOCK"] = UBUS_PATH
+    kwargs = {"env": new_env}
+    if not request.config.getoption("--debug-output"):
+        devnull = open(os.devnull, 'wb')
+        kwargs['stderr'] = devnull
+        kwargs['stdout'] = devnull
+    args = [
+        "python", "-m", "foris_ws", "-d", "-a", authentication,
+        "--host", host, "--port", str(WS_PORT),
+        "mqtt", "--mqtt-host", MQTT_HOST, "--mqtt-port", str(MQTT_PORT),
+    ]
+    process = subprocess.Popen(args, **kwargs)
+    _wait_for_opened_socket(host, ipv6)
+
+    yield process, read_wc_client_output, host, WS_PORT
+    process.kill()
+
+
+@pytest.fixture(scope="function")
 def unix_controller(request, unix_ws):
     try:
         os.unlink(SOCK_PATH)
@@ -169,6 +196,23 @@ def ubus_controller(request, ubusd_test, ubus_ws):
     process.kill()
 
 
+@pytest.fixture(scope="function")
+def mqtt_controller(request, mosquitto_test, mqtt_ws):
+    kwargs = {}
+    if not request.config.getoption("--debug-output"):
+        devnull = open(os.devnull, 'wb')
+        kwargs['stderr'] = devnull
+        kwargs['stdout'] = devnull
+
+    process = subprocess.Popen([
+        "foris-controller", "-d", "-m", "about,web", "--backend", "mock",
+        "mqtt", "--host", MQTT_HOST, "--port", str(MQTT_PORT),
+    ], **kwargs)
+    yield process
+
+    process.kill()
+
+
 @pytest.fixture(scope="session")
 def ubusd_test():
     try:
@@ -185,6 +229,21 @@ def ubusd_test():
         os.unlink(UBUS_PATH)
     except:
         pass
+
+
+@pytest.fixture(scope="session")
+def mosquitto_test(request):
+
+    kwargs = {}
+    if not request.config.getoption("--debug-output"):
+        devnull = open(os.devnull, 'wb')
+        kwargs['stderr'] = devnull
+        kwargs['stdout'] = devnull
+
+    mosquitto_path = os.environ.get("MOSQUITTO_PATH", "/usr/sbin/mosquitto")
+    mosquitto_instance = subprocess.Popen([mosquitto_path, "-v", "-p", str(MQTT_PORT)], **kwargs)
+    yield mosquitto_instance
+    mosquitto_instance.kill()
 
 
 @pytest.fixture(scope="function")
@@ -297,6 +356,38 @@ def ubus_notify(ubus_ws):
     while not os.path.exists(UBUS_PATH):
         time.sleep(0.2)
     sender = UbusNotificationSender(UBUS_PATH)
+    yield sender
+    try:
+        sender.disconnect()
+    except RuntimeError:
+        pass  # wasn't connected
+
+
+@pytest.fixture(scope="function")
+def mqtt_notify(mqtt_ws):
+    from foris_controller.buses.mqtt import MqttNotificationSender
+
+    # wait till object present
+    def on_connect(client, userdata, flags, rc):
+        client.subscribe("foris-controller/advertize")
+
+    def on_message(client, userdata, msg):
+        try:
+            if json.loads(msg.payload)["state"] in ["started", "running"]:
+                client.loop_stop(True)
+        except Exception:
+            pass
+
+    client = mqtt.Client()
+    client.on_connect = on_connect
+    client.on_message = on_message
+    client.connect(MQTT_HOST, MQTT_PORT, 30)
+    client.loop_start()
+    client._thread.join(10)
+    client.disconnect()
+
+    sender = MqttNotificationSender(MQTT_HOST, MQTT_PORT)
+
     yield sender
     try:
         sender.disconnect()

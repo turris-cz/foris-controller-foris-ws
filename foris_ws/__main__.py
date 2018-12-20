@@ -55,6 +55,9 @@ def main() -> NoReturn:
     unix_parser = subparsers.add_parser(
         "unix-socket", help="use unix socket to obtain notifications")
     unix_parser.add_argument("--path", dest="path", default='/tmp/foris-controller-notify.soc')
+    mqtt_parser = subparsers.add_parser("mqtt", help="use mqtt to obtain notificatins")
+    mqtt_parser.add_argument("--mqtt-host", dest="mqtt_host", default='localhost')
+    mqtt_parser.add_argument("--mqtt-port", dest="mqtt_port", default=1883, type=int)
 
     options = parser.parse_args()
 
@@ -67,6 +70,7 @@ def main() -> NoReturn:
     if options.bus == "ubus":
         from foris_client.buses.ubus import UbusListener
         listener_class = UbusListener
+        listener_args = {"socket_path": options.path}
         logger.debug("Using ubus to listen for notifications.")
 
     elif options.bus == "unix-socket":
@@ -77,6 +81,13 @@ def main() -> NoReturn:
         except OSError:
             pass
         listener_class = UnixSocketListener
+        listener_args = {"socket_path": options.path}
+
+    elif options.bus == "mqtt":
+        from foris_client.buses.mqtt import MqttListener
+        logger.debug("Using mqtt to listen for notifications.")
+        listener_class = MqttListener
+        listener_args = {"host": options.mqtt_host, "port": options.mqtt_port}
 
     if options.authentication == "ubus":
         from foris_ws.authentication.ubus import authenticate
@@ -86,7 +97,7 @@ def main() -> NoReturn:
     loop = asyncio.get_event_loop()
 
     # prepare bus listener
-    bus_listener = make_bus_listener(listener_class, options.path)
+    bus_listener = make_bus_listener(listener_class, **listener_args)
 
     def shutdown():
         bus_listener.disconnect()

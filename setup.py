@@ -43,6 +43,7 @@ setup(
         'websockets',
         'foris-client @ git+https://gitlab.labs.nic.cz/turris/foris-client.git',
         "ubus @ git+https://gitlab.labs.nic.cz/turris/python-ubus.git",
+        "paho-mqtt",
     ],
     setup_requires=[
         'pytest-runner',

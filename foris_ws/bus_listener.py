@@ -19,8 +19,9 @@
 
 import logging
 
-from typing import Type
+from typing import Type, Optional
 from foris_client.buses.base import BaseListener
+from foris_client.buses.mqtt import MqttListener
 
 from .connection import connections
 
@@ -38,14 +39,26 @@ def handler(notification: dict):
     logger.debug("Handling finished: %s", notification)
 
 
-def make_bus_listener(listener_class: Type[BaseListener], socket_path: str) -> BaseListener:
+def make_bus_listener(
+    listener_class: Type[BaseListener],
+    socket_path: Optional[str] = None,
+    host: Optional[str] = None,
+    port: Optional[int] = None
+) -> BaseListener:
     """ Prepares a new foris notification listener
 
     :param listener_class: listener class to be used (UbusListener, UnixSocketListner, ...)
     :param socket_path: path to socket
+    :param host: path to mqtt host
+    :param port: path to mqtt port
     :returns: instantiated listener
     :rtype: foris_client.buses.base.BaseListener
     """
-    logger.debug("Initializing bus listener (%s)" % (socket_path))
-    listener = listener_class(socket_path, handler)
+
+    if listener_class is MqttListener:
+        logger.debug("Initializing bus listener (%s:%d)", host, port)
+        listener = listener_class(host, port, handler)
+    else:
+        logger.debug("Initializing bus listener (%s)", socket_path)
+        listener = listener_class(socket_path, handler)
     return listener
