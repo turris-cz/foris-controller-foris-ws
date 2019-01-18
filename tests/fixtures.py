@@ -26,6 +26,7 @@ import time
 import websocket
 import json
 import threading
+import uuid
 
 from paho.mqtt import client as mqtt
 
@@ -39,6 +40,8 @@ WS_PORT = 8888
 WS_OUTPUT = "/tmp/foris-ws-test-output.json"
 MQTT_PORT = 11883
 MQTT_HOST = "localhost"
+
+ID = f"{uuid.getnode():012x}"
 
 
 def read_wc_client_output(old_data=None):

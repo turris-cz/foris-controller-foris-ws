@@ -24,6 +24,7 @@ import websocket
 
 from .fixtures import (
     authentication, address_family, ubusd_test, rpcd, ubus_ws, ubus_controller, ws_client,
+    ID,
     ubus_notify, UBUS_PATH,
 )
 
@@ -77,10 +78,11 @@ def test_notification(ubusd_test, ubus_ws, ubus_controller, ws_client, ubus_noti
     ubus_notify.notify("testa", "testa", {"test": "a"})
     last_output = read_output(last_output)
     assert last_output[-1] == {
-        u'action': u'testa',
-        u'data': {u'test': u'a'},
-        u'kind': u'notification',
-        u'module': u'testa'
+        'action': 'testa',
+        'data': {'test': 'a'},
+        'kind': 'notification',
+        'module': 'testa',
+        'controller_id': ID,
     }
 
     ubus_notify.notify("testd", "testd", {"test": "d"})

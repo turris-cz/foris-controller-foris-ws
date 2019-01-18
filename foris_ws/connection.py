@@ -122,7 +122,6 @@ class Connection:
     async def send_message_to_client(self, msg: dict):
         """ Sends a message to the connected client
         :param msg: message to be sent to the client (in json format)
-        :type msg: dict
         """
         str_msg = json.dumps(msg)
         logger.debug("Sending message to client %d: %s", self.client_id, str_msg)
@@ -219,13 +218,15 @@ class Connections:
             raise
 
     @_with_lock
-    def publish_notification(self, module: str, message: dict):
+    def publish_notification(self, controller_id: str, module: str, message: dict):
         """ Publishes notification of the module to clients which have the module subscribed
             does nothing if no module is present in the message
 
+        :param controller_id: id of the controller from which the notification came
         :param module: name of the module related to the notification
         :param message: a notification which will be published to all relevant clients
         """
+        message["controller_id"] = controller_id
         for _, connection in self._connections.items():
             if module in connection.modules:
                 asyncio.run_coroutine_threadsafe(  # can be scheduled from another thread

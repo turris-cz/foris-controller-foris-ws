@@ -28,15 +28,15 @@ from .connection import connections
 logger = logging.getLogger(__name__)
 
 
-def handler(notification: dict):
+def handler(notification: dict, controller_id: str):
     """ Recieves a notifiation and triggers coroutine to propage it
 
     :param notification: notification to be sent
-    :param notification: dict
+    :param controller_id: id of the controller from which the notification came
     """
-    logger.debug("Handling bus notification: %s", notification)
-    connections.publish_notification(notification["module"], notification)
-    logger.debug("Handling finished: %s", notification)
+    logger.debug("Handling bus notification from %s: %s", controller_id, notification)
+    connections.publish_notification(controller_id, notification["module"], notification)
+    logger.debug("Handling finished: %s - %s", controller_id, notification)
 
 
 def make_bus_listener(
@@ -52,7 +52,6 @@ def make_bus_listener(
     :param host: path to mqtt host
     :param port: path to mqtt port
     :returns: instantiated listener
-    :rtype: foris_client.buses.base.BaseListener
     """
 
     if listener_class is MqttListener:

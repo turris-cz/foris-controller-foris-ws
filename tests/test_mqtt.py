@@ -25,7 +25,7 @@ import websocket
 from .fixtures import (
     authentication, mosquitto_test, rpcd, ubusd_test,
     address_family, mqtt_ws, mqtt_controller, ws_client, mqtt_notify,
-    UBUS_PATH,
+    UBUS_PATH, ID,
 )
 
 
@@ -78,10 +78,11 @@ def test_notification(mqtt_ws, mqtt_controller, ws_client, mqtt_notify):
     mqtt_notify.notify("testa", "testa", {"test": "a"})
     last_output = read_output(last_output)
     assert last_output[-1] == {
-        u'action': u'testa',
-        u'data': {u'test': u'a'},
-        u'kind': u'notification',
-        u'module': u'testa'
+        'action': 'testa',
+        'data': {'test': 'a'},
+        'kind': 'notification',
+        'module': 'testa',
+        'controller_id': ID,
     }
 
     mqtt_notify.notify("testd", "testd", {"test": "d"})
