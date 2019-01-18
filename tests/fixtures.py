@@ -172,7 +172,7 @@ def unix_controller(request, unix_ws):
         kwargs['stdout'] = devnull
 
     process = subprocess.Popen([
-        "foris-controller", "-d", "-m", "about,web", "--backend", "mock",
+        "foris-controller", "-d", "-m", "about", "-m", "web", "-m", "remote", "--backend", "mock",
         "unix-socket", "--path", SOCK_PATH, "--notifications-path", NOTIFICATIONS_SOCK_PATH
     ], **kwargs)
     yield process
@@ -191,7 +191,7 @@ def ubus_controller(request, ubusd_test, ubus_ws):
         kwargs['stdout'] = devnull
 
     process = subprocess.Popen([
-        "foris-controller", "-d", "-m", "about,web", "--backend", "mock",
+        "foris-controller", "-d", "-m", "about", "-m", "web", "-m", "remote", "--backend", "mock",
         "ubus", "--path", UBUS_PATH
     ], **kwargs)
     yield process
@@ -208,7 +208,7 @@ def mqtt_controller(request, mosquitto_test, mqtt_ws):
         kwargs['stdout'] = devnull
 
     process = subprocess.Popen([
-        "foris-controller", "-d", "-m", "about,web", "--backend", "mock",
+        "foris-controller", "-d", "-m", "about", "-m", "web", "-m", "remote", "--backend", "mock",
         "mqtt", "--host", MQTT_HOST, "--port", str(MQTT_PORT),
     ], **kwargs)
     yield process
@@ -372,7 +372,7 @@ def mqtt_notify(mqtt_ws):
 
     # wait till object present
     def on_connect(client, userdata, flags, rc):
-        client.subscribe("foris-controller/advertize")
+        client.subscribe(f"foris-controller/{ID}/notification/remote/action/advertize")
 
     def on_message(client, userdata, msg):
         try:
