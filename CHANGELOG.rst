@@ -1,3 +1,9 @@
+1.2 (2019-01-20)
+----------------
+
+* test updates - handle situation that mqtt advertizements are official notifications (remote.advertize)
+* notifications for webclients extended by controller_id
+
 1.1 (2018-11-09)
 ----------------
 
