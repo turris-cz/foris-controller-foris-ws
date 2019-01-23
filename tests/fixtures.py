@@ -66,8 +66,9 @@ def _wait_for_opened_socket(host, ipv6):
             s.connect((host, WS_PORT))
             s.close()
             break
-        except Exception as e:
+        except Exception:
             time.sleep(0.2)
+
 
 @pytest.fixture(params=["none", "ubus"], ids=["auth_none", "auth_ubus"], scope="function")
 def authentication(request):
@@ -376,7 +377,7 @@ def mqtt_notify(mqtt_ws):
 
     def on_message(client, userdata, msg):
         try:
-            if json.loads(msg.payload)["state"] in ["started", "running"]:
+            if json.loads(msg.payload)["data"]["state"] in ["started", "running"]:
                 client.loop_stop(True)
         except Exception:
             pass
