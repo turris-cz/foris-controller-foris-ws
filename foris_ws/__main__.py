@@ -21,10 +21,10 @@ import asyncio
 import argparse
 import logging
 import os
-import websockets
+import typing
 import signal
+import websockets
 
-from typing import NoReturn
 
 from . import __version__
 from .bus_listener import make_bus_listener
@@ -33,13 +33,31 @@ from .ws_handling import connection_handler as ws_connection_handler
 logger = logging.getLogger(__name__)
 
 
-def main() -> NoReturn:
+available_buses: typing.List[str] = ['unix-socket']
+
+
+try:
+    __import__("ubus")
+    available_buses.append("ubus")
+except ModuleNotFoundError:
+    pass
+
+
+try:
+    __import__("paho.mqtt.client")
+    available_buses.append("mqtt")
+except ModuleNotFoundError:
+    pass
+
+
+def main() -> typing.NoReturn:
     # Parse the command line options
     parser = argparse.ArgumentParser(prog="foris-ws")
     parser.add_argument("-d", "--debug", dest="debug", action="store_true", default=False)
     parser.add_argument('--version', action='version', version=__version__)
     parser.add_argument(
-        "-a", "--authentication", type=str, choices=["ubus", "none"],
+        "-a", "--authentication", type=str,
+        choices=["ubus", "none"] if "ubus" in available_buses else ["none"],
         help="Which authentication method should be used", required=True
     )
     parser.add_argument(
@@ -50,14 +68,18 @@ def main() -> NoReturn:
     )
 
     subparsers = parser.add_subparsers(help="buses", dest="bus")
-    ubus_parser = subparsers.add_parser("ubus", help="use ubus to obtain notificatins")
-    ubus_parser.add_argument("--path", dest="path", default='/var/run/ubus.sock')
+    subparsers.required = True
+
     unix_parser = subparsers.add_parser(
         "unix-socket", help="use unix socket to obtain notifications")
     unix_parser.add_argument("--path", dest="path", default='/tmp/foris-controller-notify.soc')
-    mqtt_parser = subparsers.add_parser("mqtt", help="use mqtt to obtain notificatins")
-    mqtt_parser.add_argument("--mqtt-host", dest="mqtt_host", default='localhost')
-    mqtt_parser.add_argument("--mqtt-port", dest="mqtt_port", default=1883, type=int)
+    if "ubus" in available_buses:
+        ubus_parser = subparsers.add_parser("ubus", help="use ubus to obtain notificatins")
+        ubus_parser.add_argument("--path", dest="path", default='/var/run/ubus.sock')
+    if "mqtt" in available_buses:
+        mqtt_parser = subparsers.add_parser("mqtt", help="use mqtt to obtain notificatins")
+        mqtt_parser.add_argument("--mqtt-host", dest="mqtt_host", default='localhost')
+        mqtt_parser.add_argument("--mqtt-port", dest="mqtt_port", default=1883, type=int)
 
     options = parser.parse_args()
 
