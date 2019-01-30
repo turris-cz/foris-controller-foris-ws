@@ -41,7 +41,7 @@ WS_OUTPUT = "/tmp/foris-ws-test-output.json"
 MQTT_PORT = 11883
 MQTT_HOST = "localhost"
 
-ID = f"{uuid.getnode():012x}"
+ID = f"{uuid.getnode():016X}"
 
 
 def read_wc_client_output(old_data=None):
@@ -172,6 +172,9 @@ def unix_controller(request, unix_ws):
         kwargs['stderr'] = devnull
         kwargs['stdout'] = devnull
 
+    new_env = copy.deepcopy(dict(os.environ))
+    new_env["FC_UPDATER_MODULE"] = "foris_controller_testtools.svupdater"
+    kwargs["env"] = new_env
     process = subprocess.Popen([
         "foris-controller", "-d", "-m", "about", "-m", "web", "-m", "remote", "--backend", "mock",
         "unix-socket", "--path", SOCK_PATH, "--notifications-path", NOTIFICATIONS_SOCK_PATH
@@ -191,6 +194,9 @@ def ubus_controller(request, ubusd_test, ubus_ws):
         kwargs['stderr'] = devnull
         kwargs['stdout'] = devnull
 
+    new_env = copy.deepcopy(dict(os.environ))
+    new_env["FC_UPDATER_MODULE"] = "foris_controller_testtools.svupdater"
+    kwargs["env"] = new_env
     process = subprocess.Popen([
         "foris-controller", "-d", "-m", "about", "-m", "web", "-m", "remote", "--backend", "mock",
         "ubus", "--path", UBUS_PATH
@@ -208,6 +214,9 @@ def mqtt_controller(request, mosquitto_test, mqtt_ws):
         kwargs['stderr'] = devnull
         kwargs['stdout'] = devnull
 
+    new_env = copy.deepcopy(dict(os.environ))
+    new_env["FC_UPDATER_MODULE"] = "foris_controller_testtools.svupdater"
+    kwargs["env"] = new_env
     process = subprocess.Popen([
         "foris-controller", "-d", "-m", "about", "-m", "web", "-m", "remote", "--backend", "mock",
         "mqtt", "--host", MQTT_HOST, "--port", str(MQTT_PORT),

@@ -12,6 +12,7 @@ stages:
     - pip install .
 
     - pip install git+https://gitlab.labs.nic.cz/turris/foris-controller.git#egg=foris-controller
+    - pip install git+https://gitlab.labs.nic.cz/turris/foris-controller-testtools.git#egg=foris-controller-testtools
 
     - python setup.py test
 
