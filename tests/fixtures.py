@@ -399,7 +399,7 @@ def mqtt_notify(mqtt_ws):
     client._thread.join(10)
     client.disconnect()
 
-    sender = MqttNotificationSender(MQTT_HOST, MQTT_PORT)
+    sender = MqttNotificationSender(MQTT_HOST, MQTT_PORT, None)
 
     yield sender
     try:

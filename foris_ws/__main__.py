@@ -22,6 +22,7 @@ import argparse
 import logging
 import os
 import typing
+import re
 import signal
 import websockets
 
@@ -80,6 +81,11 @@ def main() -> typing.NoReturn:
         mqtt_parser = subparsers.add_parser("mqtt", help="use mqtt to obtain notificatins")
         mqtt_parser.add_argument("--mqtt-host", dest="mqtt_host", default='localhost')
         mqtt_parser.add_argument("--mqtt-port", dest="mqtt_port", default=1883, type=int)
+        mqtt_parser.add_argument(
+            "--mqtt-passwd-file", type=lambda x: read_passwd_file(x),
+            help="path to passwd file (first record will be used to authenticate)",
+            default=None,
+        )
 
     options = parser.parse_args()
 
@@ -109,7 +115,10 @@ def main() -> typing.NoReturn:
         from foris_client.buses.mqtt import MqttListener
         logger.debug("Using mqtt to listen for notifications.")
         listener_class = MqttListener
-        listener_args = {"host": options.mqtt_host, "port": options.mqtt_port}
+        listener_args = {
+            "host": options.mqtt_host, "port": options.mqtt_port,
+            "credentials": options.mqtt_passwd_file,
+        }
 
     if options.authentication == "ubus":
         from foris_ws.authentication.ubus import authenticate
@@ -144,6 +153,13 @@ def main() -> typing.NoReturn:
     asyncio.ensure_future(websocket_server)
     asyncio.ensure_future(run_listener())
     loop.run_forever()
+
+
+def read_passwd_file(path: str) -> typing.Tuple[str]:
+    """ Returns username and password from passwd file
+    """
+    with open(path, "r") as f:
+        return re.match(r"^([^:]+):(.*)$", f.readlines()[0][:-1]).groups()
 
 
 if __name__ == "__main__":
