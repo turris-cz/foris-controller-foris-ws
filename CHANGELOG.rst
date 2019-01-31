@@ -1,3 +1,10 @@
+1.3 (2019-01-31)
+----------------
+
+* mqtt: can set path to credentials file
+* controller_id format update
+* make ubus and mqtt buses optional
+
 1.2 (2019-01-20)
 ----------------
 
