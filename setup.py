@@ -49,6 +49,7 @@ setup(
     extras_require={
         'ubus': ["ubus"],
         'mqtt': ["paho-mqtt"],
+        'fs_auth': ["werkzeug"],
     },
     tests_require=[
         'pytest',

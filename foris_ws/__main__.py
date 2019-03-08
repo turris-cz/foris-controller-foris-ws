@@ -56,11 +56,16 @@ def main() -> typing.NoReturn:
     parser = argparse.ArgumentParser(prog="foris-ws")
     parser.add_argument("-d", "--debug", dest="debug", action="store_true", default=False)
     parser.add_argument('--version', action='version', version=__version__)
+
+    auth_choices = ["filesystem", "none"]
+    if "ubus" in available_buses:
+        auth_choices.append("ubus")
     parser.add_argument(
         "-a", "--authentication", type=str,
-        choices=["ubus", "none"] if "ubus" in available_buses else ["none"],
+        choices=auth_choices,
         help="Which authentication method should be used", required=True
     )
+
     parser.add_argument(
         "--host", type=str, help="Hostname of the websocket server.", required=True
     )
@@ -122,6 +127,8 @@ def main() -> typing.NoReturn:
 
     if options.authentication == "ubus":
         from foris_ws.authentication.ubus import authenticate
+    elif options.authentication == "filesystem":
+        from foris_ws.authentication.filesystem import authenticate
     elif options.authentication == "none":
         from foris_ws.authentication.none import authenticate
 
