@@ -57,6 +57,7 @@ setup(
         'foris-controller',
         'ubus',
         'paho-mqtt',
+        'werkzeug'
     ],
     entry_points={
         "console_scripts": [
