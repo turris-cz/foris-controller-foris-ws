@@ -25,6 +25,7 @@ import typing
 import re
 import signal
 import websockets
+import importlib
 
 
 from . import __version__
@@ -34,21 +35,22 @@ from .ws_handling import connection_handler as ws_connection_handler
 logger = logging.getLogger(__name__)
 
 
+def _extend_choices(names: typing.List[str], module_name: str, target_list: typing.List[str]):
+    try:
+        if importlib.util.find_spec(module_name):
+            target_list.extend(names)
+    except ModuleNotFoundError:
+        pass
+
+
 available_buses: typing.List[str] = ['unix-socket']
+_extend_choices(["ubus"], "ubus", available_buses)
+_extend_choices(["mqtt"], "paho.mqtt.client", available_buses)
 
 
-try:
-    __import__("ubus")
-    available_buses.append("ubus")
-except ModuleNotFoundError:
-    pass
-
-
-try:
-    __import__("paho.mqtt.client")
-    available_buses.append("mqtt")
-except ModuleNotFoundError:
-    pass
+auth_choices: typing.List[str] = ['none']
+_extend_choices(["ubus"], "ubus", auth_choices)
+_extend_choices(["filesystem"], "werkzeug.contrib.cache", auth_choices)
 
 
 def main() -> typing.NoReturn:
@@ -57,9 +59,6 @@ def main() -> typing.NoReturn:
     parser.add_argument("-d", "--debug", dest="debug", action="store_true", default=False)
     parser.add_argument('--version', action='version', version=__version__)
 
-    auth_choices = ["filesystem", "none"]
-    if "ubus" in available_buses:
-        auth_choices.append("ubus")
     parser.add_argument(
         "-a", "--authentication", type=str,
         choices=auth_choices,
