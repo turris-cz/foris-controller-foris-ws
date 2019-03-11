@@ -19,9 +19,8 @@
 
 import logging
 
-from typing import Type, Optional, Tuple
+from typing import Type, Dict, Any
 from foris_client.buses.base import BaseListener
-from foris_client.buses.mqtt import MqttListener
 
 from .connection import connections
 
@@ -34,6 +33,7 @@ def handler(notification: dict, controller_id: str):
     :param notification: notification to be sent
     :param controller_id: id of the controller from which the notification came
     """
+
     logger.debug("Handling bus notification from %s: %s", controller_id, notification)
     connections.publish_notification(controller_id, notification["module"], notification)
     logger.debug("Handling finished: %s - %s", controller_id, notification)
@@ -41,25 +41,15 @@ def handler(notification: dict, controller_id: str):
 
 def make_bus_listener(
     listener_class: Type[BaseListener],
-    socket_path: Optional[str] = None,
-    host: Optional[str] = None,
-    port: Optional[int] = None,
-    credentials: Optional[Tuple[str]] = None,
+    **listener_kwargs: Dict[str, Any],
 ) -> BaseListener:
     """ Prepares a new foris notification listener
 
     :param listener_class: listener class to be used (UbusListener, UnixSocketListner, ...)
-    :param socket_path: path to socket
-    :param host: mqtt host
-    :param port: mqtt port
-    :param credentils: path to mqtt passwd file
+    :param listener_kwargs: argument for the listener
     :returns: instantiated listener
     """
 
-    if listener_class is MqttListener:
-        logger.debug("Initializing bus listener (%s:%d)", host, port)
-        listener = listener_class(host, port, handler, credentials=credentials)
-    else:
-        logger.debug("Initializing bus listener (%s)", socket_path)
-        listener = listener_class(socket_path, handler)
+    logger.debug("Initializing bus listener (%s: %s)", listener_class, listener_kwargs)
+    listener = listener_class(**dict(handler=handler), **listener_kwargs)
     return listener
