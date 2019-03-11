@@ -1,3 +1,9 @@
+1.4 (2019-03-11)
+----------------
+
+* foris-ws: nicer optional imports loading
+* new authentication method (session in werkzeug's FileCache) implemented
+
 1.3 (2019-01-31)
 ----------------
 
