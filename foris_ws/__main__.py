@@ -63,6 +63,7 @@ def main() -> typing.NoReturn:
         "-a",
         "--authentication",
         type=str,
+        nargs="+",
         choices=auth_choices,
         help="Which authentication method should be used",
         required=True,
@@ -129,12 +130,30 @@ def main() -> typing.NoReturn:
             "credentials": options.mqtt_passwd_file,
         }
 
-    if options.authentication == "ubus":
+    authentication_methods: typing.List[callable] = []
+
+    if "ubus" in options.authentication:
         from foris_ws.authentication.ubus import authenticate
-    elif options.authentication == "filesystem":
+
+        authentication_methods.append(authenticate)
+    if "filesystem" in options.authentication:
         from foris_ws.authentication.filesystem import authenticate
-    elif options.authentication == "none":
+
+        authentication_methods.append(authenticate)
+    if "none" in options.authentication:
         from foris_ws.authentication.none import authenticate
+
+        authentication_methods.append(authenticate)
+
+    def try_authenticate(*args, **kwargs):
+        last_res = None
+        for method in authentication_methods:
+            last_res = method(*args, **kwargs)
+            if last_res is None:
+                return None  # passed
+
+        # return error from last method or None if no auth method is specified
+        return last_res
 
     loop = asyncio.get_event_loop()
 
@@ -155,7 +174,7 @@ def main() -> typing.NoReturn:
 
     # prepare websocket
     websocket_server = websockets.serve(
-        ws_connection_handler, options.host, options.port, process_request=authenticate
+        ws_connection_handler, options.host, options.port, process_request=try_authenticate
     )
 
     asyncio.ensure_future(websocket_server)

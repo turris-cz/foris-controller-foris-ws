@@ -34,8 +34,7 @@ def authenticate(path: str, request_headers: Headers) -> Optional[Tuple[int, Hea
     """ Performs an authentication based on authentication token placed in cookie
     and session saved by Flask to filesystem.
 
-    :param message: should contain clients initial request
-    :rtype: bool
+    :returns: None if auth was successfull or tuple(status_code, headers, body) to respond toclient
     """
 
     logger.debug("Logging using authentication cookie of the filesystem session.")
