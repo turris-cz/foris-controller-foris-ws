@@ -43,12 +43,12 @@ def _extend_choices(names: typing.List[str], module_name: str, target_list: typi
         pass
 
 
-available_buses: typing.List[str] = ['unix-socket']
+available_buses: typing.List[str] = ["unix-socket"]
 _extend_choices(["ubus"], "ubus", available_buses)
 _extend_choices(["mqtt"], "paho.mqtt.client", available_buses)
 
 
-auth_choices: typing.List[str] = ['none']
+auth_choices: typing.List[str] = ["none"]
 _extend_choices(["ubus"], "ubus", auth_choices)
 _extend_choices(["filesystem"], "werkzeug.contrib.cache", auth_choices)
 
@@ -57,36 +57,37 @@ def main() -> typing.NoReturn:
     # Parse the command line options
     parser = argparse.ArgumentParser(prog="foris-ws")
     parser.add_argument("-d", "--debug", dest="debug", action="store_true", default=False)
-    parser.add_argument('--version', action='version', version=__version__)
+    parser.add_argument("--version", action="version", version=__version__)
 
     parser.add_argument(
-        "-a", "--authentication", type=str,
+        "-a",
+        "--authentication",
+        type=str,
         choices=auth_choices,
-        help="Which authentication method should be used", required=True
+        help="Which authentication method should be used",
+        required=True,
     )
 
-    parser.add_argument(
-        "--host", type=str, help="Hostname of the websocket server.", required=True
-    )
-    parser.add_argument(
-        "--port", type=int, help="Port of the websocket server.", required=True
-    )
+    parser.add_argument("--host", type=str, help="Hostname of the websocket server.", required=True)
+    parser.add_argument("--port", type=int, help="Port of the websocket server.", required=True)
 
     subparsers = parser.add_subparsers(help="buses", dest="bus")
     subparsers.required = True
 
     unix_parser = subparsers.add_parser(
-        "unix-socket", help="use unix socket to obtain notifications")
-    unix_parser.add_argument("--path", dest="path", default='/tmp/foris-controller-notify.soc')
+        "unix-socket", help="use unix socket to obtain notifications"
+    )
+    unix_parser.add_argument("--path", dest="path", default="/tmp/foris-controller-notify.soc")
     if "ubus" in available_buses:
         ubus_parser = subparsers.add_parser("ubus", help="use ubus to obtain notificatins")
-        ubus_parser.add_argument("--path", dest="path", default='/var/run/ubus.sock')
+        ubus_parser.add_argument("--path", dest="path", default="/var/run/ubus.sock")
     if "mqtt" in available_buses:
         mqtt_parser = subparsers.add_parser("mqtt", help="use mqtt to obtain notificatins")
-        mqtt_parser.add_argument("--mqtt-host", dest="mqtt_host", default='localhost')
+        mqtt_parser.add_argument("--mqtt-host", dest="mqtt_host", default="localhost")
         mqtt_parser.add_argument("--mqtt-port", dest="mqtt_port", default=1883, type=int)
         mqtt_parser.add_argument(
-            "--mqtt-passwd-file", type=lambda x: read_passwd_file(x),
+            "--mqtt-passwd-file",
+            type=lambda x: read_passwd_file(x),
             help="path to passwd file (first record will be used to authenticate)",
             default=None,
         )
@@ -101,12 +102,14 @@ def main() -> typing.NoReturn:
 
     if options.bus == "ubus":
         from foris_client.buses.ubus import UbusListener
+
         listener_class = UbusListener
         listener_args = {"socket_path": options.path}
         logger.debug("Using ubus to listen for notifications.")
 
     elif options.bus == "unix-socket":
         from foris_client.buses.unix_socket import UnixSocketListener
+
         logger.debug("Using unix-socket to listen for notifications.")
         try:
             os.unlink(options.path)
@@ -117,10 +120,12 @@ def main() -> typing.NoReturn:
 
     elif options.bus == "mqtt":
         from foris_client.buses.mqtt import MqttListener
+
         logger.debug("Using mqtt to listen for notifications.")
         listener_class = MqttListener
         listener_args = {
-            "host": options.mqtt_host, "port": options.mqtt_port,
+            "host": options.mqtt_host,
+            "port": options.mqtt_port,
             "credentials": options.mqtt_passwd_file,
         }
 
@@ -150,10 +155,7 @@ def main() -> typing.NoReturn:
 
     # prepare websocket
     websocket_server = websockets.serve(
-        ws_connection_handler,
-        options.host,
-        options.port,
-        process_request=authenticate,
+        ws_connection_handler, options.host, options.port, process_request=authenticate
     )
 
     asyncio.ensure_future(websocket_server)

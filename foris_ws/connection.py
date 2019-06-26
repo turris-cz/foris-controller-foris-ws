@@ -54,6 +54,7 @@ def _with_lock(func: Callable) -> Callable:
 class Connection:
     """ Class which represents the connection between the client and the websocket server
     """
+
     PING_THREAD_TIMEOUT: float = 60.0
 
     def __init__(self, client_id: int, handler: websockets.WebSocketServerProtocol):
@@ -167,6 +168,7 @@ class Connection:
 class Connections:
     """ Class which represents all active connections
     """
+
     client_id: int = 1
 
     def __init__(self):
@@ -230,8 +232,7 @@ class Connections:
         for _, connection in self._connections.items():
             if module in connection.modules:
                 asyncio.run_coroutine_threadsafe(  # can be scheduled from another thread
-                    connection.send_message_to_client(message),
-                    self.current_event_loop,
+                    connection.send_message_to_client(message), self.current_event_loop
                 )
 
 

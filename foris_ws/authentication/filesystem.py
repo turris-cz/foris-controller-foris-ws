@@ -42,26 +42,26 @@ def authenticate(path: str, request_headers: Headers) -> Optional[Tuple[int, Hea
 
     if "Cookie" not in request_headers:
         logger.debug("Missing cookie.")
-        return HTTPStatus.FORBIDDEN, Headers([]), b'Missing Cookie'
+        return HTTPStatus.FORBIDDEN, Headers([]), b"Missing Cookie"
 
-    foris_ws_session_re = re.search(r'session=([^;\s]*)', request_headers["Cookie"])
+    foris_ws_session_re = re.search(r"session=([^;\s]*)", request_headers["Cookie"])
     if not foris_ws_session_re:
         logger.debug("Missing foris.ws.session in cookie.")
-        return HTTPStatus.FORBIDDEN, Headers([]), b'Missing foris.ws.session in cookie'
+        return HTTPStatus.FORBIDDEN, Headers([]), b"Missing foris.ws.session in cookie"
 
     session_id = foris_ws_session_re.group(1)
     logger.debug("Using session id %s" % session_id)
 
     fs_cache = FileSystemCache(SESSIONS_DIR)
-    data = fs_cache.get('session:' + session_id)
+    data = fs_cache.get("session:" + session_id)
 
     if data is None:
         logger.debug("Session '%s' not found." % session_id)
-        return HTTPStatus.FORBIDDEN, Headers([]), b'Session not found'
+        return HTTPStatus.FORBIDDEN, Headers([]), b"Session not found"
 
-    if not data.get('logged', None):
+    if not data.get("logged", None):
         logger.debug("Session '%s' found but not logged." % session_id)
-        return HTTPStatus.FORBIDDEN, Headers([]), b'Session not logged'
+        return HTTPStatus.FORBIDDEN, Headers([]), b"Session not logged"
 
     logger.debug("Connection granted.")
     return None

@@ -40,8 +40,7 @@ def handler(notification: dict, controller_id: str):
 
 
 def make_bus_listener(
-    listener_class: Type[BaseListener],
-    **listener_kwargs: Dict[str, Any],
+    listener_class: Type[BaseListener], **listener_kwargs: Dict[str, Any]
 ) -> BaseListener:
     """ Prepares a new foris notification listener
 

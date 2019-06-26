@@ -31,58 +31,54 @@ logger = logging.getLogger(__name__)
 
 
 def authenticate(path: str, request_headers: Headers) -> Optional[Tuple[int, Headers, bytes]]:
-        """ Performs an authentication based on authentication token placed in cookie
+    """ Performs an authentication based on authentication token placed in cookie
         and ubus session object.
 
         :param message: should contain clients initial request
         :rtype: bool
         """
 
-        logger.debug("Logging using authentication cookie of the ubus session object.")
+    logger.debug("Logging using authentication cookie of the ubus session object.")
 
-        if "Cookie" not in request_headers:
-            logger.debug("Missing cookie.")
-            return HTTPStatus.FORBIDDEN, Headers([]), b'Missing Cookie'
+    if "Cookie" not in request_headers:
+        logger.debug("Missing cookie.")
+        return HTTPStatus.FORBIDDEN, Headers([]), b"Missing Cookie"
 
-        foris_ws_session_re = re.search(
-            r'foris.ws.session=([^;\s]*)', request_headers["Cookie"])
-        if not foris_ws_session_re:
-            logger.debug("Missing foris.ws.session in cookie.")
-            return HTTPStatus.FORBIDDEN, Headers([]), b'Missing foris.ws.session in cookie'
+    foris_ws_session_re = re.search(r"foris.ws.session=([^;\s]*)", request_headers["Cookie"])
+    if not foris_ws_session_re:
+        logger.debug("Missing foris.ws.session in cookie.")
+        return HTTPStatus.FORBIDDEN, Headers([]), b"Missing foris.ws.session in cookie"
 
-        session_id = foris_ws_session_re.group(1)
-        logger.debug("Using session id %s" % session_id)
+    session_id = foris_ws_session_re.group(1)
+    logger.debug("Using session id %s" % session_id)
 
-        params = {
-            "ubus_rpc_session": session_id or "",
-            "scope": "ubus",
-            "object": "websocket-listen",
-            "function": "listen-allowed"
-        }
+    params = {
+        "ubus_rpc_session": session_id or "",
+        "scope": "ubus",
+        "object": "websocket-listen",
+        "function": "listen-allowed",
+    }
 
-        # Verify whether the client is able to access the listen function
+    # Verify whether the client is able to access the listen function
 
-        # We need to open a separate program to verify the session_id
-        # beacause the program might be already listening on ubus in some mode
-        args = ['ubus', '-S', 'call', 'session', 'access', json.dumps(params)]
-        if "FORIS_WS_UBUS_AUTH_SOCK" in os.environ:
-            args.insert(1, os.environ["FORIS_WS_UBUS_AUTH_SOCK"])
-            args.insert(1, "-s")
+    # We need to open a separate program to verify the session_id
+    # beacause the program might be already listening on ubus in some mode
+    args = ["ubus", "-S", "call", "session", "access", json.dumps(params)]
+    if "FORIS_WS_UBUS_AUTH_SOCK" in os.environ:
+        args.insert(1, os.environ["FORIS_WS_UBUS_AUTH_SOCK"])
+        args.insert(1, "-s")
 
-        proces = subprocess.Popen(
-            args,
-            stdout=subprocess.PIPE
-        )
-        stdout, _ = proces.communicate()
-        if proces.returncode != 0:
-            logger.debug("Session '%s' not found." % session_id)
-            return HTTPStatus.FORBIDDEN, Headers([]), b'Session not found'
+    proces = subprocess.Popen(args, stdout=subprocess.PIPE)
+    stdout, _ = proces.communicate()
+    if proces.returncode != 0:
+        logger.debug("Session '%s' not found." % session_id)
+        return HTTPStatus.FORBIDDEN, Headers([]), b"Session not found"
 
-        data = json.loads(stdout)
+    data = json.loads(stdout)
 
-        if not data["access"]:
-            logger.debug("Connection denied.")
-            return HTTPStatus.FORBIDDEN, Headers([]), b'Access for session denied'
+    if not data["access"]:
+        logger.debug("Connection denied.")
+        return HTTPStatus.FORBIDDEN, Headers([]), b"Access for session denied"
 
-        logger.debug("Connection granted.")
-        return None
+    logger.debug("Connection granted.")
+    return None
