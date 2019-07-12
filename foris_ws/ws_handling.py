@@ -32,7 +32,7 @@ async def connection_handler(handler: websockets.WebSocketServerProtocol, path: 
     logger.debug("New client id allocated (id=%d)", client_id)
     try:
         async for message in handler:
-            logger.debug("Message recieved (client %d): %s", client_id, message)
+            logger.debug("Message received (client %d): %s", client_id, message)
             await connections.handle_message(client_id, message)
             logger.debug("Message processed (client %d): %s", client_id, message)
 

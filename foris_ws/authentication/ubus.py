@@ -34,7 +34,7 @@ def authenticate(path: str, request_headers: Headers) -> Optional[Tuple[int, Hea
     """ Performs an authentication based on authentication token placed in cookie
         and ubus session object.
 
-    :returns: None if auth was successfull or tuple(status_code, headers, body) to respond toclient
+    :returns: None if auth was successful or tuple(status_code, headers, body) to respond to client
     """
 
     logger.debug("Logging using authentication cookie of the ubus session object.")

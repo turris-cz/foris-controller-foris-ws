@@ -28,7 +28,7 @@ logger = logging.getLogger(__name__)
 
 
 def handler(notification: dict, controller_id: str):
-    """ Recieves a notifiation and triggers coroutine to propage it
+    """ Receives a notification and triggers coroutine to propagate it
 
     :param notification: notification to be sent
     :param controller_id: id of the controller from which the notification came
@@ -44,7 +44,7 @@ def make_bus_listener(
 ) -> BaseListener:
     """ Prepares a new foris notification listener
 
-    :param listener_class: listener class to be used (UbusListener, UnixSocketListner, ...)
+    :param listener_class: listener class to be used (UbusListener, UnixSocketListener, ...)
     :param listener_kwargs: argument for the listener
     :returns: instantiated listener
     """

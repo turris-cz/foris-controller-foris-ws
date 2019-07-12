@@ -1,7 +1,7 @@
 1.5 (2019-06-26)
 ----------------
 
-* multiple authentication methods (you can use `-a` argument mutltiple times)
+* multiple authentication methods (you can use `-a` argument multiple times)
 
 1.4 (2019-03-11)
 ----------------

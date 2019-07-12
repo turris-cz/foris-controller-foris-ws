@@ -94,7 +94,7 @@ class Connection:
     def _subscribe(self, modules: List[str]) -> dict:
         """ Subscribes modules to the client and prepares appropriate response
 
-        :param modules: moduels to subscribe
+        :param modules: modules to subscribe
         :returns: response to client
         :raises IncorrectMessage: on incorrect modules format
         """
@@ -108,7 +108,7 @@ class Connection:
     def _unsubscribe(self, modules: List[str]) -> dict:
         """ Unsubscribes modules to the client and prepares appropriate response
 
-        :param modules: moduels to subscribe
+        :param modules: modules to subscribe
         :returns: response to client
         :raises IncorrectMessage: on incorrect modules format
         """
@@ -129,7 +129,7 @@ class Connection:
         await self.handler.send(str_msg)
 
     async def process_message(self, message: str):
-        """ Processes a message which is recieved from the client
+        """ Processes a message which is received from the client
         :param message: message which will be processed
         """
         try:
@@ -205,10 +205,10 @@ class Connections:
 
     @_with_lock
     async def handle_message(self, client_id: int, message: str):
-        """ Handles a message recieved from the client
+        """ Handles a message received from the client
 
         :param client_id: unique client id
-        :param message: message to be handeled
+        :param message: message to be handled
         """
         if client_id not in self._connections:
             logging.warning("Client '%d' is present it the connection list" % client_id)

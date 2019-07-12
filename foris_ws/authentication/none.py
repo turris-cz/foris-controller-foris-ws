@@ -27,7 +27,7 @@ logger = logging.getLogger(__name__)
 
 def authenticate(path: str, request_headers: Headers) -> Optional[Tuple[int, Headers, bytes]]:
     """ Authentication method which bypasses any authentication procedure
-    :returns: None if auth was successfull or tuple(status_code, headers, body) to respond to client
+    :returns: None if auth was successful or tuple(status_code, headers, body) to respond to client
     """
     logger.debug("Logging without any authentication.")
     return None
