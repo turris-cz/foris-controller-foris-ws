@@ -50,7 +50,7 @@ _extend_choices(["mqtt"], "paho.mqtt.client", available_buses)
 
 auth_choices: typing.List[str] = ["none"]
 _extend_choices(["ubus"], "ubus", auth_choices)
-_extend_choices(["filesystem"], "werkzeug.contrib.cache", auth_choices)
+_extend_choices(["filesystem"], "cachelib", auth_choices)
 
 
 def main() -> typing.NoReturn:
