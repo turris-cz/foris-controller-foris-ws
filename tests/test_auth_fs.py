@@ -25,8 +25,15 @@ import pytest
 import websocket
 
 from .fixtures import (
-    authentication, mosquitto_test, rpcd, ubusd_test,
-    address_family, mqtt_ws, mqtt_controller, ws_client, mqtt_notify,
+    authentication,
+    mosquitto_test,
+    rpcd,
+    ubusd_test,
+    address_family,
+    mqtt_ws,
+    mqtt_controller,
+    ws_client,
+    mqtt_notify,
 )
 
 SESSIONS_DIR = "/tmp/foris-sessions"
@@ -43,7 +50,9 @@ def fs_cache():
     shutil.rmtree(SESSIONS_DIR, ignore_errors=False)
 
 
-@pytest.mark.parametrize("authentication", ["filesystem"], ids=["auth_fs"], indirect=True, scope="function")
+@pytest.mark.parametrize(
+    "authentication", ["filesystem"], ids=["auth_fs"], indirect=True, scope="function"
+)
 def test_fail(mqtt_ws, fs_cache):
     _, _, host, port = mqtt_ws
     ws = websocket.WebSocket()
@@ -56,9 +65,11 @@ def test_fail(mqtt_ws, fs_cache):
         ws.close()
 
 
-@pytest.mark.parametrize("authentication", ["filesystem"], ids=["auth_fs"], indirect=True, scope="function")
+@pytest.mark.parametrize(
+    "authentication", ["filesystem"], ids=["auth_fs"], indirect=True, scope="function"
+)
 def test_logged(mqtt_ws, fs_cache):
-    fs_cache.add('session:%s' % SESSIONS_ID, {'logged': True})
+    fs_cache.add("session:%s" % SESSIONS_ID, {"logged": True})
 
     _, _, host, port = mqtt_ws
     ws = websocket.WebSocket()
@@ -76,9 +87,11 @@ def test_logged(mqtt_ws, fs_cache):
     fs_cache.clear()
 
 
-@pytest.mark.parametrize("authentication", ["filesystem"], ids=["auth_fs"], indirect=True, scope="function")
+@pytest.mark.parametrize(
+    "authentication", ["filesystem"], ids=["auth_fs"], indirect=True, scope="function"
+)
 def test_not_logged(mqtt_ws, fs_cache):
-    fs_cache.add('session:%s' % SESSIONS_ID, {})
+    fs_cache.add("session:%s" % SESSIONS_ID, {})
 
     _, _, host, port = mqtt_ws
     ws = websocket.WebSocket()

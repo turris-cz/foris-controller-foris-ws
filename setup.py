@@ -27,44 +27,31 @@ Implementation of websocket server for foris notification system.
 """
 
 setup(
-    name='foris-ws',
+    name="foris-ws",
     version=__version__,
-    author='CZ.NIC, z.s.p.o. (http://www.nic.cz/)',
-    author_email='stepan.henek@nic.cz',
-    packages=[
-        'foris_ws',
-        'foris_ws/authentication',
-    ],
-    url='https://gitlab.labs.nic.cz/turris/foris-ws',
-    license='COPYING',
+    author="CZ.NIC, z.s.p.o. (http://www.nic.cz/)",
+    author_email="stepan.henek@nic.cz",
+    packages=["foris_ws", "foris_ws/authentication"],
+    url="https://gitlab.labs.nic.cz/turris/foris-ws",
+    license="COPYING",
     description=DESCRIPTION,
-    long_description=open('README.rst').read(),
+    long_description=open("README.rst").read(),
     install_requires=[
-        'websockets',
-        'foris-client @ git+https://gitlab.labs.nic.cz/turris/foris-client.git',
+        "websockets",
+        "foris-client @ git+https://gitlab.labs.nic.cz/turris/foris-client.git",
     ],
-    setup_requires=[
-        'pytest-runner',
-    ],
-    extras_require={
-        'ubus': ["ubus"],
-        'mqtt': ["paho-mqtt"],
-        'fs_auth': ["werkzeug"],
-    },
+    setup_requires=["pytest-runner"],
+    extras_require={"ubus": ["ubus"], "mqtt": ["paho-mqtt"], "fs_auth": ["werkzeug"]},
     tests_require=[
-        'pytest',
-        'websocket-client',
-        'foris-controller',
-        'ubus',
-        'paho-mqtt',
-        'werkzeug'
+        "pytest",
+        "websocket-client",
+        "foris-controller",
+        "ubus",
+        "paho-mqtt",
+        "werkzeug",
     ],
-    entry_points={
-        "console_scripts": [
-            "foris-ws = foris_ws.__main__:main",
-        ]
-    },
+    entry_points={"console_scripts": ["foris-ws = foris_ws.__main__:main"]},
     dependency_links=[
-        "git+https://gitlab.labs.nic.cz/turris/foris-controller.git#egg=foris-controller",
+        "git+https://gitlab.labs.nic.cz/turris/foris-controller.git#egg=foris-controller"
     ],
 )

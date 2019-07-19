@@ -93,12 +93,23 @@ def ubus_ws(request, ubusd_test, address_family, authentication, rpcd):
     new_env["FORIS_WS_UBUS_AUTH_SOCK"] = UBUS_PATH
     kwargs = {"env": new_env}
     if not request.config.getoption("--debug-output"):
-        devnull = open(os.devnull, 'wb')
-        kwargs['stderr'] = devnull
-        kwargs['stdout'] = devnull
+        devnull = open(os.devnull, "wb")
+        kwargs["stderr"] = devnull
+        kwargs["stdout"] = devnull
     args = [
-        "python", "-m", "foris_ws", "-d", "-a", authentication, "--host", host, "--port", str(WS_PORT),
-        "ubus", "--path", UBUS_PATH
+        "python",
+        "-m",
+        "foris_ws",
+        "-d",
+        "-a",
+        authentication,
+        "--host",
+        host,
+        "--port",
+        str(WS_PORT),
+        "ubus",
+        "--path",
+        UBUS_PATH,
     ]
     process = subprocess.Popen(args, **kwargs)
     _wait_for_opened_socket(host, ipv6)
@@ -119,12 +130,23 @@ def unix_ws(request, ubusd_test, address_family, authentication, rpcd):
     new_env["FORIS_WS_UBUS_AUTH_SOCK"] = UBUS_PATH
     kwargs = {"env": new_env}
     if not request.config.getoption("--debug-output"):
-        devnull = open(os.devnull, 'wb')
-        kwargs['stderr'] = devnull
-        kwargs['stdout'] = devnull
+        devnull = open(os.devnull, "wb")
+        kwargs["stderr"] = devnull
+        kwargs["stdout"] = devnull
     args = [
-        "python", "-m", "foris_ws", "-d", "-a", authentication, "--host", host, "--port", str(WS_PORT),
-        "unix-socket", "--path", NOTIFICATIONS_SOCK_PATH
+        "python",
+        "-m",
+        "foris_ws",
+        "-d",
+        "-a",
+        authentication,
+        "--host",
+        host,
+        "--port",
+        str(WS_PORT),
+        "unix-socket",
+        "--path",
+        NOTIFICATIONS_SOCK_PATH,
     ]
     process = subprocess.Popen(args, **kwargs)
     _wait_for_opened_socket(host, ipv6)
@@ -141,13 +163,25 @@ def mqtt_ws(request, mosquitto_test, address_family, authentication, rpcd):
     new_env["FORIS_WS_UBUS_AUTH_SOCK"] = UBUS_PATH
     kwargs = {"env": new_env}
     if not request.config.getoption("--debug-output"):
-        devnull = open(os.devnull, 'wb')
-        kwargs['stderr'] = devnull
-        kwargs['stdout'] = devnull
+        devnull = open(os.devnull, "wb")
+        kwargs["stderr"] = devnull
+        kwargs["stdout"] = devnull
     args = [
-        "python", "-m", "foris_ws", "-d", "-a", authentication,
-        "--host", host, "--port", str(WS_PORT),
-        "mqtt", "--mqtt-host", MQTT_HOST, "--mqtt-port", str(MQTT_PORT),
+        "python",
+        "-m",
+        "foris_ws",
+        "-d",
+        "-a",
+        authentication,
+        "--host",
+        host,
+        "--port",
+        str(WS_PORT),
+        "mqtt",
+        "--mqtt-host",
+        MQTT_HOST,
+        "--mqtt-port",
+        str(MQTT_PORT),
     ]
     process = subprocess.Popen(args, **kwargs)
     _wait_for_opened_socket(host, ipv6)
@@ -168,17 +202,33 @@ def unix_controller(request, unix_ws):
 
     kwargs = {}
     if not request.config.getoption("--debug-output"):
-        devnull = open(os.devnull, 'wb')
-        kwargs['stderr'] = devnull
-        kwargs['stdout'] = devnull
+        devnull = open(os.devnull, "wb")
+        kwargs["stderr"] = devnull
+        kwargs["stdout"] = devnull
 
     new_env = copy.deepcopy(dict(os.environ))
     new_env["FC_UPDATER_MODULE"] = "foris_controller_testtools.svupdater"
     kwargs["env"] = new_env
-    process = subprocess.Popen([
-        "foris-controller", "-d", "-m", "about", "-m", "web", "-m", "remote", "--backend", "mock",
-        "unix-socket", "--path", SOCK_PATH, "--notifications-path", NOTIFICATIONS_SOCK_PATH
-    ], **kwargs)
+    process = subprocess.Popen(
+        [
+            "foris-controller",
+            "-d",
+            "-m",
+            "about",
+            "-m",
+            "web",
+            "-m",
+            "remote",
+            "--backend",
+            "mock",
+            "unix-socket",
+            "--path",
+            SOCK_PATH,
+            "--notifications-path",
+            NOTIFICATIONS_SOCK_PATH,
+        ],
+        **kwargs,
+    )
     yield process
     process.kill()
 
@@ -190,17 +240,31 @@ def ubus_controller(request, ubusd_test, ubus_ws):
 
     kwargs = {}
     if not request.config.getoption("--debug-output"):
-        devnull = open(os.devnull, 'wb')
-        kwargs['stderr'] = devnull
-        kwargs['stdout'] = devnull
+        devnull = open(os.devnull, "wb")
+        kwargs["stderr"] = devnull
+        kwargs["stdout"] = devnull
 
     new_env = copy.deepcopy(dict(os.environ))
     new_env["FC_UPDATER_MODULE"] = "foris_controller_testtools.svupdater"
     kwargs["env"] = new_env
-    process = subprocess.Popen([
-        "foris-controller", "-d", "-m", "about", "-m", "web", "-m", "remote", "--backend", "mock",
-        "ubus", "--path", UBUS_PATH
-    ], **kwargs)
+    process = subprocess.Popen(
+        [
+            "foris-controller",
+            "-d",
+            "-m",
+            "about",
+            "-m",
+            "web",
+            "-m",
+            "remote",
+            "--backend",
+            "mock",
+            "ubus",
+            "--path",
+            UBUS_PATH,
+        ],
+        **kwargs,
+    )
     yield process
 
     process.kill()
@@ -210,17 +274,33 @@ def ubus_controller(request, ubusd_test, ubus_ws):
 def mqtt_controller(request, mosquitto_test, mqtt_ws):
     kwargs = {}
     if not request.config.getoption("--debug-output"):
-        devnull = open(os.devnull, 'wb')
-        kwargs['stderr'] = devnull
-        kwargs['stdout'] = devnull
+        devnull = open(os.devnull, "wb")
+        kwargs["stderr"] = devnull
+        kwargs["stdout"] = devnull
 
     new_env = copy.deepcopy(dict(os.environ))
     new_env["FC_UPDATER_MODULE"] = "foris_controller_testtools.svupdater"
     kwargs["env"] = new_env
-    process = subprocess.Popen([
-        "foris-controller", "-d", "-m", "about", "-m", "web", "-m", "remote", "--backend", "mock",
-        "mqtt", "--host", MQTT_HOST, "--port", str(MQTT_PORT),
-    ], **kwargs)
+    process = subprocess.Popen(
+        [
+            "foris-controller",
+            "-d",
+            "-m",
+            "about",
+            "-m",
+            "web",
+            "-m",
+            "remote",
+            "--backend",
+            "mock",
+            "mqtt",
+            "--host",
+            MQTT_HOST,
+            "--port",
+            str(MQTT_PORT),
+        ],
+        **kwargs,
+    )
     yield process
 
     process.kill()
@@ -249,9 +329,9 @@ def mosquitto_test(request):
 
     kwargs = {}
     if not request.config.getoption("--debug-output"):
-        devnull = open(os.devnull, 'wb')
-        kwargs['stderr'] = devnull
-        kwargs['stdout'] = devnull
+        devnull = open(os.devnull, "wb")
+        kwargs["stderr"] = devnull
+        kwargs["stdout"] = devnull
 
     mosquitto_path = os.environ.get("MOSQUITTO_PATH", "/usr/sbin/mosquitto")
     mosquitto_instance = subprocess.Popen([mosquitto_path, "-v", "-p", str(MQTT_PORT)], **kwargs)
@@ -281,19 +361,28 @@ def ws_client(address_family, rpcd):
         pass
 
     # create cookies in ubus
-    subprocess.check_output([
-        "ubus", "-s", UBUS_PATH,  "wait_for", "session",
-    ])
-    raw_session = subprocess.check_output([
-        "ubus", "-s", UBUS_PATH,  "call", "session", "create", '{"timeout":600}'
-    ])
+    subprocess.check_output(["ubus", "-s", UBUS_PATH, "wait_for", "session"])
+    raw_session = subprocess.check_output(
+        ["ubus", "-s", UBUS_PATH, "call", "session", "create", '{"timeout":600}']
+    )
     session_id = json.loads(raw_session)["ubus_rpc_session"]
-    subprocess.check_output([
-        "ubus", "-s", UBUS_PATH,  "call", "session", "grant", json.dumps({
-            "ubus_rpc_session": session_id, "scope": "ubus",
-            "objects": [["websocket-listen", "listen-allowed"]]
-        })
-    ])
+    subprocess.check_output(
+        [
+            "ubus",
+            "-s",
+            UBUS_PATH,
+            "call",
+            "session",
+            "grant",
+            json.dumps(
+                {
+                    "ubus_rpc_session": session_id,
+                    "scope": "ubus",
+                    "objects": [["websocket-listen", "listen-allowed"]],
+                }
+            ),
+        ]
+    )
 
     exiting = [False]
     started = [False]
@@ -325,6 +414,7 @@ def ws_client(address_family, rpcd):
                     if exiting[0]:
                         break
             ws.close()
+
         thread = threading.Thread(target=msg_loop)
         thread.daemon = True
         thread.start()
@@ -332,7 +422,8 @@ def ws_client(address_family, rpcd):
     def worker():
         ws = websocket.WebSocketApp(
             "ws://%s:%d/" % (host, WS_PORT),
-            on_message=on_message, on_open=on_open,
+            on_message=on_message,
+            on_open=on_open,
             cookie="foris.ws.session=%s" % session_id,
         )
         started[0] = True
@@ -353,6 +444,7 @@ def ws_client(address_family, rpcd):
 @pytest.fixture(scope="function")
 def unix_notify(unix_ws):
     from foris_controller.buses.unix_socket import UnixSocketNotificationSender
+
     while not os.path.exists(NOTIFICATIONS_SOCK_PATH):
         time.sleep(0.2)
     sender = UnixSocketNotificationSender(NOTIFICATIONS_SOCK_PATH)
@@ -366,6 +458,7 @@ def unix_notify(unix_ws):
 @pytest.fixture(scope="function")
 def ubus_notify(ubus_ws):
     from foris_controller.buses.ubus import UbusNotificationSender
+
     while not os.path.exists(UBUS_PATH):
         time.sleep(0.2)
     sender = UbusNotificationSender(UBUS_PATH)
