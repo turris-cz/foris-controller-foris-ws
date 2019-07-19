@@ -23,7 +23,7 @@ import re
 from http import HTTPStatus
 from typing import Optional, Tuple
 from websockets.http import Headers
-from werkzeug.contrib.cache import FileSystemCache
+from cachelib.file import FileSystemCache
 
 logger = logging.getLogger(__name__)
 

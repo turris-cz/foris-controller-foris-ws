@@ -19,7 +19,7 @@
 
 import json
 import shutil
-from werkzeug.contrib.cache import FileSystemCache
+from cachelib.file import FileSystemCache
 
 import pytest
 import websocket

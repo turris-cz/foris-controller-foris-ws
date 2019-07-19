@@ -41,14 +41,14 @@ setup(
         "foris-client @ git+https://gitlab.labs.nic.cz/turris/foris-client.git",
     ],
     setup_requires=["pytest-runner"],
-    extras_require={"ubus": ["ubus"], "mqtt": ["paho-mqtt"], "fs_auth": ["werkzeug"]},
+    extras_require={"ubus": ["ubus"], "mqtt": ["paho-mqtt"], "fs_auth": ["cachelib"]},
     tests_require=[
         "pytest",
         "websocket-client",
         "foris-controller",
         "ubus",
         "paho-mqtt",
-        "werkzeug",
+        "cachelib",
     ],
     entry_points={"console_scripts": ["foris-ws = foris_ws.__main__:main"]},
     dependency_links=[
