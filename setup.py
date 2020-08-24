@@ -2,7 +2,7 @@
 
 #
 # foris-ws
-# Copyright (C) 2019 CZ.NIC, z.s.p.o. (http://www.nic.cz/)
+# Copyright (C) 2019-2020 CZ.NIC, z.s.p.o. (http://www.nic.cz/)
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -30,15 +30,15 @@ setup(
     name="foris-ws",
     version=__version__,
     author="CZ.NIC, z.s.p.o. (http://www.nic.cz/)",
-    author_email="stepan.henek@nic.cz",
+    author_email="packaging@turris.cz",
     packages=["foris_ws", "foris_ws/authentication"],
-    url="https://gitlab.labs.nic.cz/turris/foris-ws",
+    url="https://gitlab.nic.cz/turris/foris-ws",
     license="COPYING",
     description=DESCRIPTION,
     long_description=open("README.rst").read(),
     install_requires=[
         "websockets",
-        "foris-client @ git+https://gitlab.labs.nic.cz/turris/foris-client.git",
+        "foris-client @ git+https://gitlab.nic.cz/turris/foris-client.git",
     ],
     setup_requires=["pytest-runner"],
     extras_require={"ubus": ["ubus"], "mqtt": ["paho-mqtt"], "fs_auth": ["cachelib"]},
@@ -52,6 +52,6 @@ setup(
     ],
     entry_points={"console_scripts": ["foris-ws = foris_ws.__main__:main"]},
     dependency_links=[
-        "git+https://gitlab.labs.nic.cz/turris/foris-controller.git#egg=foris-controller"
+        "git+https://gitlab.nic.cz/turris/foris-controller.git#egg=foris-controller"
     ],
 )
