@@ -1,3 +1,9 @@
+1.6.2 (2021-07-21)
+------------------
+
+* moved default path of ubus socket
+* changed url from gitlab.labs.nic.cz to gitlab.nic.cz
+
 1.6.1 (2019-07-19)
 ------------------
 
