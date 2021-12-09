@@ -38,7 +38,7 @@ setup(
     long_description=open("README.rst").read(),
     install_requires=[
         "websockets",
-        "foris-client @ git+https://gitlab.nic.cz/turris/foris-client.git",
+        "foris-client @ git+https://gitlab.nic.cz/turris/foris-controller/foris-client.git",
     ],
     setup_requires=["pytest-runner"],
     extras_require={"ubus": ["ubus"], "mqtt": ["paho-mqtt"], "fs_auth": ["cachelib"]},
