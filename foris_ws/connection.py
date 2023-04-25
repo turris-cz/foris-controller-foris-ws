@@ -1,6 +1,6 @@
 #
 # foris-ws
-# Copyright (C) 2017 CZ.NIC, z.s.p.o. (http://www.nic.cz/)
+# Copyright (C) 2017-2023 CZ.NIC, z.s.p.o. (http://www.nic.cz/)
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -27,7 +27,7 @@ import websockets
 from typing import List, Set, Union, Callable, Type
 
 from functools import wraps
-from collections import Iterable
+from collections.abc import Iterable
 
 logger = logging.getLogger(__name__)
 
