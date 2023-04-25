@@ -2,7 +2,7 @@
 
 #
 # foris-ws
-# Copyright (C) 2019-2020 CZ.NIC, z.s.p.o. (http://www.nic.cz/)
+# Copyright (C) 2019-2023 CZ.NIC, z.s.p.o. (http://www.nic.cz/)
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -54,4 +54,5 @@ setup(
     dependency_links=[
         "git+https://gitlab.nic.cz/turris/foris-controller.git#egg=foris-controller"
     ],
+    python_requires=">=3.3"
 )
