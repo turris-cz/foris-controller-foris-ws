@@ -1,6 +1,6 @@
 before_script:
   - pip install virtualenv
-  - virtualenv -p "$(which python)" /tmp/test
+  - virtualenv -p python3.10 /tmp/test
 
 stages:
   - test
