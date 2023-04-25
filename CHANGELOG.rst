@@ -1,3 +1,11 @@
+1.6.3 (2023-04-26)
+------------------
+
+* fix error "cannot import name 'Iterable' from 'collections'" on Python 3.10
+* setup.py: Set Python 3.3 as minimum required version
+* CI: Use Python 3.10 as the default Python for testing
+* update URLs to gitlab repositories 
+
 1.6.2 (2021-07-21)
 ------------------
 
