@@ -32,7 +32,7 @@ setup(
     author="CZ.NIC, z.s.p.o. (http://www.nic.cz/)",
     author_email="packaging@turris.cz",
     packages=["foris_ws", "foris_ws/authentication"],
-    url="https://gitlab.nic.cz/turris/foris-ws",
+    url="https://gitlab.nic.cz/turris/foris-controller/foris-ws",
     license="COPYING",
     description=DESCRIPTION,
     long_description=open("README.rst").read(),
@@ -52,7 +52,7 @@ setup(
     ],
     entry_points={"console_scripts": ["foris-ws = foris_ws.__main__:main"]},
     dependency_links=[
-        "git+https://gitlab.nic.cz/turris/foris-controller.git#egg=foris-controller"
+        "git+https://gitlab.nic.cz/turris/foris-controller/foris-controller.git#egg=foris-controller"
     ],
     python_requires=">=3.3"
 )
