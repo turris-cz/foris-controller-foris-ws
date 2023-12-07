@@ -1,0 +1,52 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "foris-ws"
+dynamic = ["version"]
+description = "Implementation of websocket server for foris notification system."
+readme = "README.rst"
+license = "GPL-3.0"
+requires-python = ">=3.9"
+authors = [
+    { name = "CZ.NIC, z.s.p.o. (http://www.nic.cz/)", email = "packaging@turris.cz" },
+]
+dependencies = [
+    "foris-client",
+    "websockets",
+]
+
+[project.optional-dependencies]
+fs_auth = [
+    "cachelib",
+]
+mqtt = [
+    "paho-mqtt",
+]
+tests = [
+    "cachelib",
+    "foris-controller",
+    "paho-mqtt",
+    "pytest",
+    "tox",
+    "ubus",
+    "websocket-client",
+]
+ubus = [
+    "ubus",
+]
+
+[project.scripts]
+foris-ws = "foris_ws.__main__:main"
+
+[project.urls]
+Homepage = "https://gitlab.nic.cz/turris/foris-controller/foris-ws"
+
+[tool.hatch.version]
+path = "foris_ws/__init__.py"
+
+[tool.hatch.build.targets.sdist]
+include = [
+    "/foris_ws",
+]
