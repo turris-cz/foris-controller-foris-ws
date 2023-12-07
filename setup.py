@@ -38,21 +38,24 @@ setup(
     long_description=open("README.rst").read(),
     install_requires=[
         "websockets",
-        "foris-client @ git+https://gitlab.nic.cz/turris/foris-controller/foris-client.git",
+        "foris-client",
     ],
     setup_requires=["pytest-runner"],
-    extras_require={"ubus": ["ubus"], "mqtt": ["paho-mqtt"], "fs_auth": ["cachelib"]},
-    tests_require=[
-        "pytest",
-        "websocket-client",
-        "foris-controller",
-        "ubus",
-        "paho-mqtt",
-        "cachelib",
-    ],
+    extras_require={
+        "ubus": ["ubus"],
+        "mqtt": ["paho-mqtt"],
+        "fs_auth":["cachelib"],
+        "tests": [
+            "ubus",
+            "paho-mqtt",
+            "cachelib",
+            "pytest",
+            "websocket-client",
+            "foris-controller",
+            "tox",
+        ],
+    },
+    tests_require=[],
     entry_points={"console_scripts": ["foris-ws = foris_ws.__main__:main"]},
-    dependency_links=[
-        "git+https://gitlab.nic.cz/turris/foris-controller/foris-controller.git#egg=foris-controller"
-    ],
-    python_requires=">=3.3"
+    python_requires=">=3.9"
 )

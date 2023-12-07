@@ -123,7 +123,7 @@ def unix_ws(request, ubusd_test, address_family, authentication, rpcd):
     host, ipv6 = address_family
     try:
         os.unlink(NOTIFICATIONS_SOCK_PATH)
-    except:
+    except Exception:
         pass
 
     new_env = copy.deepcopy(dict(os.environ))
@@ -194,7 +194,7 @@ def mqtt_ws(request, mosquitto_test, address_family, authentication, rpcd):
 def unix_controller(request, unix_ws):
     try:
         os.unlink(SOCK_PATH)
-    except:
+    except Exception:
         pass
 
     while not os.path.exists(NOTIFICATIONS_SOCK_PATH):
@@ -310,7 +310,7 @@ def mqtt_controller(request, mosquitto_test, mqtt_ws):
 def ubusd_test():
     try:
         os.unlink(UBUS_PATH)
-    except:
+    except Exception:
         pass
 
     ubusd_instance = subprocess.Popen(["ubusd", "-A", "tests/ubus-acl", "-s", UBUS_PATH])
@@ -320,7 +320,7 @@ def ubusd_test():
     ubusd_instance.kill()
     try:
         os.unlink(UBUS_PATH)
-    except:
+    except Exception:
         pass
 
 
@@ -357,7 +357,7 @@ def ws_client(address_family, rpcd):
         host = "[%s]" % host
     try:
         os.unlink(WS_OUTPUT)
-    except:
+    except Exception:
         pass
 
     # create cookies in ubus

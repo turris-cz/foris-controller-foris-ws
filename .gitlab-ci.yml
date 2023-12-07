@@ -1,22 +1,18 @@
-before_script:
-  - pip install virtualenv
-  - virtualenv -p python3.10 /tmp/test
+variables:
+  GIT_SUBMODULE_STRATEGY: recursive
 
 stages:
+  - lint
   - test
+  - build
+  - publish
 
-.run_script: &run_script
-  script:
-    - source /tmp/test/bin/activate
+include:
+  - remote: "https://gitlab.nic.cz/turris/foris-controller/packages/-/raw/master/templates/python/base.yml"
+  - remote: "https://gitlab.nic.cz/turris/foris-controller/packages/-/raw/master/templates/python/linters.yml"
+  - remote: "https://gitlab.nic.cz/turris/foris-controller/packages/-/raw/master/templates/python/tox.yml"
+  - remote: "https://gitlab.nic.cz/turris/foris-controller/packages/-/raw/master/templates/python/build_and_publish.yml"
 
-    - pip install .
-
-    - pip install git+https://gitlab.nic.cz/turris/foris-controller/foris-controller.git#egg=foris-controller
-    - pip install git+https://gitlab.nic.cz/turris/foris-controller/foris-controller-testtools.git#egg=foris-controller-testtools
-
-    - python setup.py test
-
-test_python3:
-  image: registry.nic.cz/turris/foris-ci/python3
-  stage: test
-  <<: *run_script
+lint::python::tox:
+  variables:
+    IMAGE: registry.nic.cz/turris/foris-ci/python3
