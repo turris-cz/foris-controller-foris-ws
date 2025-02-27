@@ -14,7 +14,7 @@ authors = [
 ]
 dependencies = [
     "foris-client",
-    "websockets",
+    "websockets < 14.0",
 ]
 
 [project.optional-dependencies]
