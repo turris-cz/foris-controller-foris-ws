@@ -207,7 +207,6 @@ def unix_controller(request, unix_ws):
         kwargs["stdout"] = devnull
 
     new_env = copy.deepcopy(dict(os.environ))
-    new_env["FC_UPDATER_MODULE"] = "foris_controller_testtools.svupdater"
     kwargs["env"] = new_env
     process = subprocess.Popen(
         [
@@ -245,7 +244,6 @@ def ubus_controller(request, ubusd_test, ubus_ws):
         kwargs["stdout"] = devnull
 
     new_env = copy.deepcopy(dict(os.environ))
-    new_env["FC_UPDATER_MODULE"] = "foris_controller_testtools.svupdater"
     kwargs["env"] = new_env
     process = subprocess.Popen(
         [
@@ -279,7 +277,6 @@ def mqtt_controller(request, mosquitto_test, mqtt_ws):
         kwargs["stdout"] = devnull
 
     new_env = copy.deepcopy(dict(os.environ))
-    new_env["FC_UPDATER_MODULE"] = "foris_controller_testtools.svupdater"
     kwargs["env"] = new_env
     process = subprocess.Popen(
         [
