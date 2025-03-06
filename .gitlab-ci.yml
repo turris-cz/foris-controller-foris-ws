@@ -1,6 +1,5 @@
 variables:
   GIT_SUBMODULE_STRATEGY: recursive
-  CI_TOX_EXTRA: -s --debug-output
 
 stages:
   - lint

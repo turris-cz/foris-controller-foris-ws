@@ -70,6 +70,17 @@ def _wait_for_opened_socket(host, ipv6):
             time.sleep(0.2)
 
 
+def _wait_for_closed_socket(host, ipv6):
+    s = socket.socket(socket.AF_INET6 if ipv6 else socket.AF_INET)
+    while True:
+        try:
+            s.connect((host, WS_PORT))
+            s.close()
+            time.sleep(0.2)
+        except Exception:
+            break
+
+
 @pytest.fixture(params=["none", "ubus"], ids=["auth_none", "auth_ubus"], scope="function")
 def authentication(request):
     return request.param
@@ -116,6 +127,7 @@ def ubus_ws(request, ubusd_test, address_family, authentication, rpcd):
 
     yield process, read_wc_client_output, host, WS_PORT
     process.kill()
+    _wait_for_closed_socket(host, ipv6)
 
 
 @pytest.fixture(scope="function")
@@ -153,6 +165,7 @@ def unix_ws(request, ubusd_test, address_family, authentication, rpcd):
 
     yield process, read_wc_client_output, host, WS_PORT
     process.kill()
+    _wait_for_closed_socket(host, ipv6)
 
 
 @pytest.fixture(scope="function")
@@ -188,6 +201,7 @@ def mqtt_ws(request, mosquitto_test, address_family, authentication, rpcd):
 
     yield process, read_wc_client_output, host, WS_PORT
     process.kill()
+    _wait_for_closed_socket(host, ipv6)
 
 
 @pytest.fixture(scope="function")
